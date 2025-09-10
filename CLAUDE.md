@@ -79,3 +79,31 @@ To test the server manually:
 npm run build
 npm start https://hapi.fhir.org/baseR4
 ```
+
+### Alternative FHIR Test Servers
+
+If you encounter HTTP 500 errors with the HAPI server, try these alternatives:
+
+```bash
+# HAPI FHIR R4 (primary)
+npm start https://hapi.fhir.org/baseR4
+
+# HAPI FHIR R5 
+npm start https://hapi.fhir.org/baseR5
+
+# IBM FHIR Server (read-only for some operations)
+npm start https://fhirtest.uhn.ca/baseR4
+
+# Firely Server (Simplifier)
+npm start https://server.fire.ly
+```
+
+### Debugging HTTP 500 Errors
+
+HTTP 500 errors during create operations can be caused by:
+1. **Resource validation failures** - FHIR server rejects invalid resource structure
+2. **Business rule violations** - Server-side constraints (e.g., duplicate identifiers)
+3. **Server capacity issues** - Temporary server overload
+4. **Authentication/authorization** - Missing or invalid API keys
+
+Use the `fhir_capability` tool to check server capabilities before creating resources.

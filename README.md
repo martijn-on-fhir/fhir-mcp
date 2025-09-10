@@ -73,7 +73,8 @@ Add to your Claude Desktop configuration:
       "command": "node",
       "args": ["/path/to/fhir-mcp/dist/index.js", "https://your-fhir-server.com/fhir"],
       "env": {
-        "FHIR_API_KEY": "your-api-key"
+        "FHIR_API_KEY": "your-api-key",
+        "FHIR_URL": "http://localhost:3000/fhir"
       }
     }
   }
