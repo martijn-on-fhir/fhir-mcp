@@ -2,6 +2,8 @@ export interface ServerConfig {
   url: string;
   timeout?: number;
   apiKey?: string;
+  useDutchProfiles?: boolean;
+  dutchProfileBaseUrl?: string;
 }
 
 export function loadConfig(): ServerConfig {

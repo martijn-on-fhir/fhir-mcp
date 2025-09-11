@@ -2,6 +2,7 @@
   "name": "fhir-mcp-server",
   "version": "1.0.0",
   "description": "Configurable MCP server for FHIR data",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -17,10 +18,13 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "axios": "^1.11.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "terser-webpack-plugin": "^5.3.10",
+    "ts-loader": "^9.5.1",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0"
   }
