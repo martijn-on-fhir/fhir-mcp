@@ -65,7 +65,8 @@ Or using environment variable only:
       "args": ["C:/projects/fhir-mcp/dist/index.js"],
       "env": {
         "FHIR_URL": "https://hapi.fhir.org/baseR4",
-        "FHIR_API_KEY": "your-api-key-if-needed"
+        "FHIR_API_KEY": "your-api-key-if-needed",
+        "USE_DUTCH_PROFILES": "true"
       }
     }
   }
