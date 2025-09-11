@@ -129,6 +129,29 @@ class FHIRMCPServer {
               properties: {},
             },
           },
+          {
+            name: 'send_feedback',
+            description: 'Send feedback or log messages to the console',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                message: {
+                  type: 'string',
+                  description: 'Feedback message to log',
+                },
+                level: {
+                  type: 'string',
+                  enum: ['info', 'warn', 'error', 'debug'],
+                  description: 'Log level (defaults to info)',
+                },
+                context: {
+                  type: 'object',
+                  description: 'Additional context data',
+                },
+              },
+              required: ['message'],
+            },
+          },
         ],
       };
     });
@@ -155,6 +178,9 @@ class FHIRMCPServer {
           
           case 'get_config':
             return await this.handleGetConfig();
+          
+          case 'send_feedback':
+            return await this.handleSendFeedback(args as { message: string; level?: string; context?: any });
           
           default:
             throw new Error(`Unknown tool: ${name}`);
@@ -223,6 +249,8 @@ class FHIRMCPServer {
       searchParams.append(key, String(value));
     });
 
+    searchParams.append('_summary', 'data')
+
     const url = `${this.config.url}/${resourceType}?${searchParams.toString()}`;
 
     console.log(url)
@@ -288,7 +316,7 @@ class FHIRMCPServer {
     // Ensure the resource has the correct resourceType
     resource.resourceType = resourceType;
     
-    console.error(`Creating ${resourceType} at: ${url}`);
+    console.log(`Creating ${resourceType} at: ${url}`);
     console.error(`Request body:`, JSON.stringify(resource, null, 2));
     
     try {
@@ -377,6 +405,41 @@ class FHIRMCPServer {
     };
   }
 
+  private async handleSendFeedback(args: { message: string; level?: string; context?: any }) {
+    const { message, level = 'info', context } = args;
+    const timestamp = new Date().toISOString();
+    
+    const logPrefix = `[${timestamp}] [${level.toUpperCase()}]`;
+    const logMessage = context 
+      ? `${logPrefix} ${message}\nContext: ${JSON.stringify(context, null, 2)}`
+      : `${logPrefix} ${message}`;
+
+    switch (level.toLowerCase()) {
+      case 'error':
+        console.error(logMessage);
+        break;
+      case 'warn':
+        console.warn(logMessage);
+        break;
+      case 'debug':
+        console.debug(logMessage);
+        break;
+      case 'info':
+      default:
+        console.log(logMessage);
+        break;
+    }
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Feedback logged: ${message}`,
+        },
+      ],
+    };
+  }
+
   private async fetchWithConfig(url: string, options?: RequestInit): Promise<Response> {
     const headers: Record<string, string> = {
       'Accept': 'application/fhir+json',
@@ -384,6 +447,7 @@ class FHIRMCPServer {
     };
 
     if (this.config.apiKey) {
+        
       headers['Authorization'] = `Bearer ${this.config.apiKey}`;
     }
 
