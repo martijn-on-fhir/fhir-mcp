@@ -17,6 +17,9 @@ module.exports = {
         'chore',    // Other changes that don't modify src or test files
         'revert'    // Reverts a previous commit
       ]
-    ]
-  }
+    ],
+    'body-max-line-length': [2, 'always', 200], // Increase limit for semantic-release commits
+    'footer-max-line-length': [2, 'always', 200] // Increase limit for semantic-release footers
+  },
+  ignores: [(commit) => commit.includes('[skip ci]')] // Ignore commits with [skip ci]
 };
