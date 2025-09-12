@@ -24,16 +24,14 @@ class FHIRMCPServer {
 
         this.config = loadConfig();
 
-        this.server = new Server(
-            {
+        this.server = new Server({
                 name: 'fhir-mcp-server',
                 version: '1.0.0',
-            },
-            {
-                capabilities: {                    tools: {},
+                capabilities: {
+                    tools: {},
                     resources: {},
                 }
-            },
+            }
         )
 
         this._setupHandlers();
@@ -351,7 +349,7 @@ class FHIRMCPServer {
         const searchParams = new URLSearchParams();
         searchParams.append('_summary', 'data')
 
-        const { resourceType, id } = args;
+        const {resourceType, id} = args;
         const url = `${resourceType}/${id}?${searchParams.toString()}`;
 
         const response = await this._executeRequest(url, 'GET');
@@ -368,7 +366,7 @@ class FHIRMCPServer {
 
     private async _create(args: { resourceType: string; resource: any }): Promise<any> {
 
-        const { resourceType, resource } = args;
+        const {resourceType, resource} = args;
         const url = `/${resourceType}`;
 
         this._sendFeedback({
@@ -380,7 +378,6 @@ class FHIRMCPServer {
         try {
             const response = await this._executeRequest(url, 'POST', resource);
             console.error(`Create successful:`, response.id || 'No ID returned');
-
 
 
             return {
@@ -406,10 +403,10 @@ class FHIRMCPServer {
 
     private async _update(args: { resourceType: string; id: string; resource: any }): Promise<any> {
 
-        const { resourceType, id, resource } = args;
+        const {resourceType, id, resource} = args;
         const url = `/${resourceType}/${id}`;
 
-       return  await this._executeRequest(url, 'PUT', resource).then(response => {
+        return await this._executeRequest(url, 'PUT', resource).then(response => {
 
             return {
                 content: [
@@ -440,7 +437,7 @@ class FHIRMCPServer {
      */
     private async _delete(args: { resourceType: string; id: string }): Promise<any> {
 
-        const { resourceType, id } = args;
+        const {resourceType, id} = args;
         const url = `/${resourceType}/${id}`;
 
         const response = await this._executeRequest(url, 'DELETE');
@@ -574,7 +571,7 @@ class FHIRMCPServer {
             },
         }
 
-        if(payload){
+        if (payload) {
 
             Object.defineProperty(config, 'data', {
                 value: payload,
