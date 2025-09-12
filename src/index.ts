@@ -5,7 +5,8 @@ import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
     CallToolRequestSchema, ListResourcesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import {loadConfig, ServerConfig} from './config.js';
+import {loadConfigWithFile as loadConfig} from './config-loader.js';
+import {ServerConfig} from './config.js';
 import {Axios} from 'axios';
 
 /**
@@ -26,10 +27,12 @@ class FHIRMCPServer {
 
         this.server = new Server({
                 name: 'fhir-mcp-server',
-                version: '1.0.0',
+                version: '1.0.0'
+            },
+            {
                 capabilities: {
                     tools: {},
-                    resources: {},
+                    resources: {}
                 }
             }
         )
@@ -40,13 +43,32 @@ class FHIRMCPServer {
 
     private _setUpAxios() {
 
+        console.error(`[AXIOS_SETUP] Setting up Axios with baseURL: ${this.config.url}`);
+
         this.instance = new Axios({
             baseURL: this.config.url,
             headers: {
                 'Accept': 'application/fhir+json',
                 'Content-Type': 'application/fhir+json',
-            }
+            },
+            timeout: this.config.timeout || 30000,
+            // Add request/response interceptors for debugging
+            transformRequest: [(data) => {
+                console.error(`[AXIOS_SETUP] Transform request - data type:`, typeof data);
+                if (typeof data === 'object') {
+                    const jsonString = JSON.stringify(data);
+                    console.error(`[AXIOS_SETUP] Transforming object to JSON string, length:`, jsonString.length);
+                    return jsonString;
+                }
+                return data;
+            }],
+            transformResponse: [(data) => {
+                console.error(`[AXIOS_SETUP] Transform response - data type:`, typeof data, 'length:', data?.length || 'N/A');
+                return data; // Let our _executeRequest handle JSON parsing
+            }]
         })
+
+        console.error(`[AXIOS_SETUP] Axios instance created successfully`);
     }
 
     private _setupHandlers() {
@@ -186,29 +208,7 @@ class FHIRMCPServer {
                             },
                             required: ['message'],
                         },
-                    },
-                    {
-                        name: 'get_dutch_profiles',
-                        description: 'Get information about supported Dutch FHIR profiles',
-                        inputSchema: {
-                            type: 'object',
-                            properties: {},
-                        },
-                    },
-                    {
-                        name: 'toggle_dutch_profiles',
-                        description: 'Enable or disable Dutch profile usage',
-                        inputSchema: {
-                            type: 'object',
-                            properties: {
-                                enable: {
-                                    type: 'boolean',
-                                    description: 'Whether to enable Dutch profiles',
-                                },
-                            },
-                            required: ['enable'],
-                        },
-                    },
+                    }
                 ],
             };
         })
@@ -326,7 +326,7 @@ class FHIRMCPServer {
 
         searchParams.append('_summary', 'data')
 
-        const url = `${resourceType}?${searchParams.toString()}`;
+        const url = `fhir/${resourceType}?${searchParams.toString()}`;
         const response = await this._executeRequest(url, 'GET');
 
         return {
@@ -350,7 +350,7 @@ class FHIRMCPServer {
         searchParams.append('_summary', 'data')
 
         const {resourceType, id} = args;
-        const url = `${resourceType}/${id}?${searchParams.toString()}`;
+        const url = `fhir/${resourceType}/${id}?${searchParams.toString()}`;
 
         const response = await this._executeRequest(url, 'GET');
 
@@ -367,18 +367,11 @@ class FHIRMCPServer {
     private async _create(args: { resourceType: string; resource: any }): Promise<any> {
 
         const {resourceType, resource} = args;
-        const url = `/${resourceType}`;
-
-        this._sendFeedback({
-            message: `Creating ${resourceType} with data:`,
-            context: resource,
-            level: 'debug'
-        })
+        const url = `fhir/${resourceType}`
 
         try {
-            const response = await this._executeRequest(url, 'POST', resource);
-            console.error(`Create successful:`, response.id || 'No ID returned');
 
+            const response = await this._executeRequest(url, 'POST', resource);
 
             return {
                 content: [
@@ -404,7 +397,7 @@ class FHIRMCPServer {
     private async _update(args: { resourceType: string; id: string; resource: any }): Promise<any> {
 
         const {resourceType, id, resource} = args;
-        const url = `/${resourceType}/${id}`;
+        const url = `fhir/${resourceType}/${id}`;
 
         return await this._executeRequest(url, 'PUT', resource).then(response => {
 
@@ -438,7 +431,7 @@ class FHIRMCPServer {
     private async _delete(args: { resourceType: string; id: string }): Promise<any> {
 
         const {resourceType, id} = args;
-        const url = `/${resourceType}/${id}`;
+        const url = `fhir/${resourceType}/${id}`;
 
         const response = await this._executeRequest(url, 'DELETE');
 
@@ -472,7 +465,9 @@ class FHIRMCPServer {
                 ],
             };
         } catch (error) {
+
             const errorMessage = error instanceof Error ? error.message : String(error);
+
             return {
                 content: [
                     {
@@ -499,9 +494,7 @@ class FHIRMCPServer {
                         {
                             url: this.config.url,
                             timeout: this.config.timeout,
-                            hasApiKey: !!this.config.apiKey,
-                            useDutchProfiles: this.config.useDutchProfiles,
-                            dutchProfileBaseUrl: this.config.dutchProfileBaseUrl,
+                            hasApiKey: !!this.config.apiKey
                         },
                         null,
                         2
@@ -567,21 +560,57 @@ class FHIRMCPServer {
             url,
             headers: {
                 'Accept': 'application/fhir+json',
-                'Content-Type': 'application/fhir+json',
-            },
+                'Content-Type': 'application/json',
+            }
         }
 
-        if (payload) {
+        if (payload && (method.toUpperCase() === 'POST' || method.toUpperCase() === 'PUT')){
 
             Object.defineProperty(config, 'data', {
                 value: payload,
                 enumerable: true,
+                writable: true,
+                configurable: true,
             })
         }
+
         return await this.instance.request(config).then(response => {
-            return response.data
-        }).catch(error => {
-            return Promise.reject(new Error('Request failed'))
+
+            if (typeof response.data === 'string') {
+
+                try {
+                    return JSON.parse(response.data);
+                } catch (parseError) {
+
+                    return response.data;
+                }
+            }
+
+            return response.data;
+
+        }).catch(async (error) => {
+
+            console.error(`[EXECUTE_REQUEST] Error details:`, {
+                message: error.message,
+                code: error.code,
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                responseData: error.response?.data,
+                responseHeaders: error.response?.headers
+            });
+
+            await this._sendFeedback({
+                message: `Request failed while executing query: ${error.message}`,
+                level: 'error',
+                context: {
+                    error,
+                    config,
+                    response: error.response
+                }
+            });
+
+            // Re-throw the error to be handled by the caller
+            throw error;
         })
     }
 
