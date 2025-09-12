@@ -7,7 +7,8 @@ export interface ServerConfig {
 }
 
 export function loadConfig(): ServerConfig {
-  const url = process.env.FHIR_URL || process.argv[2];
+
+    const url = process.env.FHIR_URL || process.argv[2];
   
   if (!url) {
     throw new Error('FHIR URL must be provided via FHIR_URL environment variable or command line argument');
