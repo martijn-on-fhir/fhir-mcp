@@ -1,6 +1,6 @@
 {
   "name": "fhir-mcp-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Configurable MCP server for FHIR data",
   "type": "module",
   "main": "dist/index.js",
@@ -10,6 +10,11 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "start-dev": "node dist/index.js http://localhost:3000",
+    "debug": "node --inspect-brk dist/index.js http://localhost:3000",
+    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js http://localhost:3000",
+    "inspect-debug": "npx @modelcontextprotocol/inspector node --inspect dist/index.js http://localhost:3000",
+    "inspect-ts-debug": "npx @modelcontextprotocol/inspector tsx --inspect src/index.ts http://localhost:3000",
     "dev": "tsx src/index.ts",
     "semantic-release": "semantic-release",
     "release": "npm run build && semantic-release",

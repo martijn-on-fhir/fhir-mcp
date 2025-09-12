@@ -67,14 +67,8 @@ npm test
 ### Manual Testing
 Test with different FHIR servers:
 ```bash
-# HAPI FHIR R4
-npm start https://hapi.fhir.org/baseR4
-
-# IBM FHIR Server
-npm start https://fhirtest.uhn.ca/baseR4
-
-# Firely Server
-npm start https://server.fire.ly
+# Fhri Resource server R4
+npm start http://localhost:3000
 ```
 
 ### Unit Tests
