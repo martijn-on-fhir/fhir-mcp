@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.6.0...v1.6.1) (2025-09-13)
+
+
+### Bug Fixes
+
+* correct MCP Resource Templates schema to match protocol specification ([9ca706f](https://github.com/martijn-on-fhir/fhir-mcp/commit/9ca706f28a8fb944d6922cd87a0c7dc46b310d68))
+
 # [1.6.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.5.1...v1.6.0) (2025-09-13)
 
 
