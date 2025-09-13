@@ -102,3 +102,5 @@ Use the `fhir_capability` tool to check server capabilities before creating reso
 - to memorize
 - to memorize
 - to memorize
+- to memory
+- to memorize
