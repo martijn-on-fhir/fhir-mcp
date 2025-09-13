@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.3.0...v1.4.0) (2025-09-13)
+
+
+### Features
+
+* add Claude AI code review automation for GitHub ([4026186](https://github.com/martijn-on-fhir/fhir-mcp/commit/402618651cf40e42f0691ef68ac197ae82fefe2c))
+
 # [1.3.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.2.0...v1.3.0) (2025-09-13)
 
 
