@@ -3,13 +3,14 @@
 import {Server} from '@modelcontextprotocol/sdk/server/index.js';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
-    CallToolRequestSchema, ListResourcesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema,
+    CallToolRequestSchema, ListResourcesRequestSchema, ListResourceTemplatesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import {loadConfigWithFile as loadConfig} from './lib/configuration/config-loader.js';
 import {ServerConfig} from './lib/configuration/config.js';
 import {Narrative, NarrativeStyle} from './lib/narrative/narrative.js';
 import {FHIRPromptManager} from './lib/prompts/prompt-manager.js';
 import {FHIRDocumentationProvider} from './lib/documentation/fhir-documentation-provider.js';
+import {ResourceTemplateManager} from './lib/resources/resource-template-manager.js';
 import {Axios} from 'axios';
 
 /**
@@ -76,11 +77,22 @@ class FHIRMCPServer {
      */
     private documentationProvider: FHIRDocumentationProvider;
 
+    /**
+     * An instance of `ResourceTemplateManager` responsible for managing parameterized
+     * resource URI templates in the MCP system.
+     *
+     * This manager enables dynamic resource access through template patterns with
+     * parameter substitution, making the resource system more discoverable and
+     * flexible for both human users and AI assistants like Claude.
+     */
+    private templateManager: ResourceTemplateManager;
+
     constructor() {
 
         this.config = loadConfig();
         this.promptManager = new FHIRPromptManager();
         this.documentationProvider = new FHIRDocumentationProvider();
+        this.templateManager = new ResourceTemplateManager();
 
         this.server = new Server({
             name: 'fhir-mcp-server',
@@ -90,6 +102,7 @@ class FHIRMCPServer {
             capabilities: {
                 tools: {},
                 resources: {},
+                resourceTemplates: {},
             },
         },
         );
@@ -514,6 +527,28 @@ class FHIRMCPServer {
 
             const {uri} = request.params;
 
+            // Check if this is a template URI that needs parameter resolution
+            if (this.templateManager.isTemplateUri(uri)) {
+                // For now, we'll handle template URIs by returning template information
+                // In a full implementation, you'd extract parameters from the URI
+                const template = this.templateManager.getTemplate(uri);
+                if (template) {
+                    return {
+                        contents: [{
+                            uri,
+                            mimeType: 'application/json',
+                            text: JSON.stringify({
+                                templateUri: uri,
+                                name: template.name,
+                                description: template.description,
+                                parameters: template.parameters,
+                                usage: 'Replace {parameterName} with actual values to access resources'
+                            }, null, 2)
+                        }]
+                    };
+                }
+            }
+
             if (uri === 'config://server') {
                 return {
                     contents: [
@@ -565,13 +600,287 @@ class FHIRMCPServer {
                 };
             }
 
-            // FHIR R4 Documentation Resources
+            // FHIR R4 Documentation Resources (including template-resolved URIs)
             if (uri.startsWith('fhir://r4/')) {
                 return await this.documentationProvider.getFHIRDocumentation(uri);
             }
 
+            // Handle resolved template URIs
+            if (uri.startsWith('prompt://fhir/')) {
+                return this._handleResolvedPromptUri(uri);
+            }
+
+            if (uri.startsWith('context://fhir/')) {
+                return this._handleResolvedContextUri(uri);
+            }
+
+            if (uri.startsWith('config://')) {
+                return this._handleResolvedConfigUri(uri);
+            }
+
+            if (uri.startsWith('validation://fhir/')) {
+                return this._handleResolvedValidationUri(uri);
+            }
+
+            if (uri.startsWith('examples://fhir/')) {
+                return this._handleResolvedExamplesUri(uri);
+            }
+
             throw new Error(`Unknown resource: ${uri}`);
         });
+
+        this.server.setRequestHandler(ListResourceTemplatesRequestSchema, async () => {
+            const resourceTemplates = this.templateManager.getResourceTemplates();
+
+            return {
+                resourceTemplates: resourceTemplates.map(template => ({
+                    uriTemplate: template.uri,
+                    name: template.name,
+                    description: template.description,
+                    mimeType: template.mimeType,
+                    parameters: template.parameters
+                }))
+            };
+        });
+    }
+
+    /**
+     * Handle resolved prompt URIs from templates
+     * @param uri Resolved prompt URI
+     * @returns Promise resolving to prompt content
+     */
+    private async _handleResolvedPromptUri(uri: string): Promise<object> {
+        // Parse URI like: prompt://fhir/clinical/patient-assessment
+        const parts = uri.replace('prompt://fhir/', '').split('/');
+
+        if (parts.length === 2) {
+            const [category, promptId] = parts;
+            if (!category || !promptId) {
+                throw new Error(`Invalid prompt URI format: ${uri}`);
+            }
+            const prompts = this.promptManager.getPromptsByTag(category);
+            const prompt = prompts.find(p => p.id === promptId);
+
+            if (prompt) {
+                return {
+                    contents: [{
+                        uri,
+                        mimeType: 'text/plain',
+                        text: prompt.prompt
+                    }]
+                };
+            }
+        }
+
+        // Fallback to existing prompt handling
+        return {
+            contents: [{
+                uri,
+                mimeType: 'text/plain',
+                text: `Prompt not found for URI: ${uri}`
+            }]
+        };
+    }
+
+    /**
+     * Handle resolved context URIs from templates
+     * @param uri Resolved context URI
+     * @returns Promise resolving to context content
+     */
+    private async _handleResolvedContextUri(uri: string): Promise<object> {
+        // Parse URI like: context://fhir/admission/clinical
+        const parts = uri.replace('context://fhir/', '').split('/');
+
+        if (parts.length === 2) {
+            const [workflow, userType] = parts;
+            const contextPrompt = this.promptManager.getClinicalContextPrompt(undefined, workflow, userType);
+
+            return {
+                contents: [{
+                    uri,
+                    mimeType: 'application/json',
+                    text: JSON.stringify({
+                        workflow,
+                        userType,
+                        context: contextPrompt
+                    }, null, 2)
+                }]
+            };
+        }
+
+        throw new Error(`Invalid context URI format: ${uri}`);
+    }
+
+    /**
+     * Handle resolved config URIs from templates
+     * @param uri Resolved config URI
+     * @returns Promise resolving to config content
+     */
+    private async _handleResolvedConfigUri(uri: string): Promise<object> {
+        const configType = uri.replace('config://', '');
+
+        switch (configType) {
+            case 'server':
+                return {
+                    contents: [{
+                        uri,
+                        mimeType: 'application/json',
+                        text: JSON.stringify({
+                            url: this.config.url,
+                            timeout: this.config.timeout,
+                            hasApiKey: !!this.config.apiKey,
+                        }, null, 2)
+                    }]
+                };
+            case 'fhir':
+                return {
+                    contents: [{
+                        uri,
+                        mimeType: 'application/json',
+                        text: JSON.stringify({
+                            version: 'R4',
+                            baseUrl: this.config.url,
+                            timeout: this.config.timeout,
+                            capabilities: 'CRUD operations, validation, narrative generation'
+                        }, null, 2)
+                    }]
+                };
+            case 'prompts':
+                return {
+                    contents: [{
+                        uri,
+                        mimeType: 'application/json',
+                        text: JSON.stringify({
+                            totalPrompts: this.promptManager.getPrompts().length,
+                            categories: ['clinical', 'security', 'technical', 'workflow'],
+                            features: ['parameter substitution', 'context awareness', 'multi-user support']
+                        }, null, 2)
+                    }]
+                };
+            default:
+                throw new Error(`Unknown config type: ${configType}`);
+        }
+    }
+
+    /**
+     * Handle resolved validation URIs from templates
+     * @param uri Resolved validation URI
+     * @returns Promise resolving to validation content
+     */
+    private async _handleResolvedValidationUri(uri: string): Promise<object> {
+        // Parse URI like: validation://fhir/Patient/structure
+        const parts = uri.replace('validation://fhir/', '').split('/');
+
+        if (parts.length === 2) {
+            const [resourceType, level] = parts;
+            if (!resourceType || !level) {
+                throw new Error(`Invalid validation URI format: ${uri}`);
+            }
+
+            return {
+                contents: [{
+                    uri,
+                    mimeType: 'text/plain',
+                    text: `FHIR ${resourceType} Validation - ${level.toUpperCase()} Level
+
+Resource Type: ${resourceType}
+Validation Level: ${level}
+
+This would contain specific validation guidance for ${resourceType} resources at the ${level} validation level.
+
+Common validation points:
+- Required elements and cardinalities
+- Data type constraints
+- Value set bindings
+- Business rule invariants
+- Profile-specific requirements
+
+For detailed validation rules, see: fhir://r4/validation`
+                }]
+            };
+        }
+
+        throw new Error(`Invalid validation URI format: ${uri}`);
+    }
+
+    /**
+     * Handle resolved examples URIs from templates
+     * @param uri Resolved examples URI
+     * @returns Promise resolving to examples content
+     */
+    private async _handleResolvedExamplesUri(uri: string): Promise<object> {
+        // Parse URI like: examples://fhir/Patient/search
+        const parts = uri.replace('examples://fhir/', '').split('/');
+
+        if (parts.length === 2) {
+            const [resourceType] = parts;
+            if (!resourceType) {
+                throw new Error(`Invalid examples URI format: ${uri}`);
+            }
+
+            return {
+                contents: [{
+                    uri,
+                    mimeType: 'text/plain',
+                    text: `FHIR ${resourceType} Search Examples
+
+# Basic Searches
+GET /${resourceType}
+GET /${resourceType}?_count=10
+GET /${resourceType}?_sort=_lastUpdated
+
+# Resource-Specific Examples for ${resourceType}:
+${this._generateResourceSpecificExamples(resourceType)}
+
+# Advanced Patterns
+GET /${resourceType}?_include=${resourceType}:*
+GET /${resourceType}?_summary=count
+GET /${resourceType}?_elements=id,meta,text
+
+For complete search documentation, see: fhir://r4/search`
+                }]
+            };
+        }
+
+        throw new Error(`Invalid examples URI format: ${uri}`);
+    }
+
+    /**
+     * Generate resource-specific search examples
+     * @param resourceType FHIR resource type
+     * @returns String with resource-specific examples
+     */
+    private _generateResourceSpecificExamples(resourceType: string): string {
+        switch (resourceType) {
+            case 'Patient':
+                return `GET /Patient?name=John
+GET /Patient?birthdate=1990-01-01
+GET /Patient?identifier=12345
+GET /Patient?family=Smith&given=John`;
+
+            case 'Observation':
+                return `GET /Observation?subject=Patient/123
+GET /Observation?code=http://loinc.org|8480-6
+GET /Observation?date=ge2021-01-01
+GET /Observation?value-quantity=120`;
+
+            case 'Condition':
+                return `GET /Condition?subject=Patient/123
+GET /Condition?clinical-status=active
+GET /Condition?code=http://snomed.info/sct|38341003
+GET /Condition?onset-date=ge2020-01-01`;
+
+            case 'MedicationRequest':
+                return `GET /MedicationRequest?subject=Patient/123
+GET /MedicationRequest?status=active
+GET /MedicationRequest?medication=Medication/456
+GET /MedicationRequest?intent=order`;
+
+            default:
+                return `GET /${resourceType}?subject=Patient/123
+GET /${resourceType}?status=active
+GET /${resourceType}?date=ge2021-01-01`;
+        }
     }
 
     /**

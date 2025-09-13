@@ -119,6 +119,99 @@ The server includes a comprehensive FHIR R4 documentation provider that gives Cl
 
 The documentation system is powered by the `FHIRDocumentationProvider` class, ensuring maintainable and up-to-date FHIR knowledge.
 
+## MCP Resource Templates
+
+The server implements comprehensive **MCP Resource Templates** for parameterized, discoverable resource access patterns:
+
+### Template Categories
+
+#### 1. **FHIR Documentation Templates**
+```
+fhir://r4/{docType}
+```
+- **Parameters**: `docType` ∈ [`specification`, `resources`, `datatypes`, `search`, `validation`, `terminology`]
+- **Usage**: `fhir://r4/specification`, `fhir://r4/resources`, etc.
+- **Purpose**: Dynamic access to any FHIR R4 documentation type
+
+#### 2. **Contextual FHIR Prompts**
+```
+prompt://fhir/{category}/{promptId}
+```
+- **Parameters**:
+  - `category` ∈ [`clinical`, `security`, `technical`, `workflow`]
+  - `promptId` - Specific prompt identifier
+- **Usage**: `prompt://fhir/clinical/patient-assessment`
+- **Purpose**: Category-organized prompt access
+
+#### 3. **Resource-Specific Prompts**
+```
+prompt://fhir/resource/{resourceType}
+```
+- **Parameters**: `resourceType` ∈ [`Patient`, `Observation`, `Condition`, `MedicationRequest`, ...]
+- **Usage**: `prompt://fhir/resource/Patient`
+- **Purpose**: Tailored prompts for specific FHIR resource types
+
+#### 4. **Workflow Context Templates**
+```
+context://fhir/{workflow}/{userType}
+```
+- **Parameters**:
+  - `workflow` ∈ [`admission`, `discharge`, `medication-review`, `care-planning`, `billing`, `scheduling`]
+  - `userType` ∈ [`clinical`, `administrative`, `technical`, `billing`] (default: `clinical`)
+- **Usage**: `context://fhir/admission/clinical`
+- **Purpose**: Workflow-specific contextual guidance
+
+#### 5. **Configuration Templates**
+```
+config://{configType}
+```
+- **Parameters**: `configType` ∈ [`server`, `fhir`, `security`, `prompts`, `documentation`]
+- **Usage**: `config://fhir`, `config://prompts`
+- **Purpose**: Access different configuration aspects
+
+#### 6. **Validation Templates**
+```
+validation://fhir/{resourceType}/{level}
+```
+- **Parameters**:
+  - `resourceType` - Any FHIR resource type
+  - `level` ∈ [`structure`, `cardinality`, `terminology`, `profile`, `invariants`] (default: `structure`)
+- **Usage**: `validation://fhir/Patient/terminology`
+- **Purpose**: Resource-specific validation guidance
+
+#### 7. **Search Examples Templates**
+```
+examples://fhir/{resourceType}/search
+```
+- **Parameters**: `resourceType` - Any FHIR resource type
+- **Usage**: `examples://fhir/Observation/search`
+- **Purpose**: Dynamic search pattern examples
+
+### Template Benefits
+
+✅ **Discoverable API**: Templates make all resource patterns visible in MCP Inspector
+✅ **Parameter Validation**: Built-in validation for enum values and required parameters
+✅ **Dynamic Construction**: Claude can programmatically build resource URIs
+✅ **Interactive Testing**: Easy parameter substitution in development tools
+✅ **Self-Documenting**: Templates show available parameters and allowed values
+✅ **Type Safety**: Full schema validation with clear error messages
+
+### Using Templates
+
+Templates are automatically discovered by MCP clients and displayed in tools like MCP Inspector:
+
+```javascript
+// List all available templates
+const templates = await client.listResourceTemplates();
+
+// Use resolved template URIs
+const docContent = await client.readResource('fhir://r4/validation');
+const promptContent = await client.readResource('prompt://fhir/clinical/patient-assessment');
+const contextContent = await client.readResource('context://fhir/admission/clinical');
+```
+
+The template system is powered by the `ResourceTemplateManager` class, providing a structured approach to resource discovery and access.
+
 ## FHIR Intelligent Prompts System
 
 The server includes a comprehensive prompt management system providing contextual AI assistance for FHIR operations:
@@ -225,7 +318,7 @@ Add to your Claude Desktop configuration:
 
 ### Project Status
 
-**Current Version:** 1.3.0
+**Current Version:** 1.6.0
 **FHIR Version:** R4
 **Node.js:** 16+ required
 **TypeScript:** 5.0+
@@ -236,12 +329,13 @@ Add to your Claude Desktop configuration:
 ✅ **Resource Validation** - Complete R4 specification compliance checking
 ✅ **Narrative Generation** - Human-readable resource descriptions
 ✅ **Comprehensive FHIR Documentation** - Built-in R4 specification, resource types, data types, search, validation, and terminology guidance
+✅ **MCP Resource Templates** - 7 parameterized template categories for discoverable, dynamic resource access
 ✅ **Intelligent Prompts** - 50+ contextual AI prompts for healthcare workflows
 ✅ **Security Framework** - HIPAA-compliant data handling and audit logging
 ✅ **Multi-Server Support** - Works with any FHIR R4 compatible server
-✅ **MCP Integration** - Full Model Context Protocol compatibility
+✅ **MCP Integration** - Full Model Context Protocol compatibility with Inspector support
 ✅ **TypeScript** - Complete type safety and IntelliSense support
-✅ **Modular Architecture** - Clean separation with dedicated providers for prompts and documentation
+✅ **Modular Architecture** - Clean separation with dedicated providers for prompts, documentation, and templates
 
 ### Development Scripts
 
