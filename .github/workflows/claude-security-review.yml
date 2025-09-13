@@ -1,0 +1,97 @@
+name: Claude Security Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  security-review:
+    name: Claude Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Claude Security Review
+        uses: anthropics/claude-code-security-review@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          
+          # Healthcare-specific security focus
+          security_focus: |
+            FHIR Healthcare Data Security:
+            - PHI (Protected Health Information) handling
+            - HIPAA compliance considerations
+            - Patient data encryption and access controls
+            - Authentication and authorization for healthcare APIs
+            - Input validation for FHIR resources
+            - SQL injection and XSS prevention
+            - Secure configuration management
+            - Error handling that doesn't leak sensitive information
+            - Proper logging without exposing patient data
+            
+            General Security Concerns:
+            - Injection vulnerabilities (SQL, NoSQL, Command, etc.)
+            - Authentication and session management flaws
+            - Cross-site scripting (XSS) and CSRF
+            - Insecure dependencies and outdated packages
+            - Improper error handling and information disclosure
+            - Insecure cryptographic practices
+            - Access control vulnerabilities
+            
+          # Focus on critical files for healthcare applications
+          include_patterns: |
+            src/**/*.ts
+            src/**/*.js
+            package*.json
+            *.config.js
+            .env*
+            
+          exclude_patterns: |
+            node_modules/**
+            dist/**
+            coverage/**
+            **/*.test.ts
+            **/*.spec.ts
+
+      - name: Create security summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo, number } = context.issue;
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: number,
+              body: `🛡️ **Claude Security Review Completed**
+              
+              This pull request has been automatically analyzed for security vulnerabilities with a focus on:
+              
+              **Healthcare-Specific Security:**
+              - PHI (Protected Health Information) handling
+              - HIPAA compliance considerations  
+              - FHIR resource validation and sanitization
+              - Healthcare API authentication patterns
+              
+              **General Security:**
+              - Injection vulnerabilities
+              - Authentication/authorization flaws
+              - Data exposure risks
+              - Dependency security issues
+              
+              Any security findings will be posted as review comments above. Please address all security concerns before merging.
+              
+              *This automated review helps maintain security standards but does not replace manual security review for critical changes.*`
+            });

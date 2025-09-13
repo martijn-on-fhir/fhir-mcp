@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-import {Server} from '@modelcontextprotocol/sdk/server/index.js';
-import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
     CallToolRequestSchema, ListResourcesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import {loadConfigWithFile as loadConfig} from './lib/configuration/config-loader.js';
-import {ServerConfig} from './lib/configuration/config.js';
-import {Narrative, NarrativeStyle} from './lib/narrative/narrative.js';
-import {Axios} from 'axios';
+import { loadConfigWithFile as loadConfig } from './lib/configuration/config-loader.js';
+import { ServerConfig } from './lib/configuration/config.js';
+import { Narrative, NarrativeStyle } from './lib/narrative/narrative.js';
+import { Axios } from 'axios';
 
 /**
  * FHIR Model Context Protocol Server implementation
@@ -27,22 +27,22 @@ class FHIRMCPServer {
         this.config = loadConfig();
 
         this.server = new Server({
-                name: 'fhir-mcp-server',
-                version: '1.0.0'
+            name: 'fhir-mcp-server',
+            version: '1.0.0',
+        },
+        {
+            capabilities: {
+                tools: {},
+                resources: {},
             },
-            {
-                capabilities: {
-                    tools: {},
-                    resources: {}
-                }
-            }
-        )
+        },
+        );
 
         this._setupHandlers();
-        this._setUpAxios()
+        this._setUpAxios();
     }
 
-    private _setUpAxios() {
+    private _setUpAxios(): void {
 
         console.error(`[AXIOS_SETUP] Setting up Axios with baseURL: ${this.config.url}`);
 
@@ -54,25 +54,27 @@ class FHIRMCPServer {
             },
             timeout: this.config.timeout || 30000,
             // Add request/response interceptors for debugging
-            transformRequest: [(data) => {
-                console.error(`[AXIOS_SETUP] Transform request - data type:`, typeof data);
+            transformRequest: [(data): any => {
+                console.error('[AXIOS_SETUP] Transform request - data type:', typeof data);
+
                 if (typeof data === 'object') {
                     const jsonString = JSON.stringify(data);
-                    console.error(`[AXIOS_SETUP] Transforming object to JSON string, length:`, jsonString.length);
+                    console.error('[AXIOS_SETUP] Transforming object to JSON string, length:', jsonString.length);
                     return jsonString;
                 }
+
                 return data;
             }],
-            transformResponse: [(data) => {
-                console.error(`[AXIOS_SETUP] Transform response - data type:`, typeof data, 'length:', data?.length || 'N/A');
+            transformResponse: [(data): any => {
+                console.error('[AXIOS_SETUP] Transform response - data type:', typeof data, 'length:', data?.length || 'N/A');
                 return data; // Let our _executeRequest handle JSON parsing
-            }]
-        })
+            }],
+        });
 
-        console.error(`[AXIOS_SETUP] Axios instance created successfully`);
+        console.error('[AXIOS_SETUP] Axios instance created successfully');
     }
 
-    private _setupHandlers() {
+    private _setupHandlers(): void {
 
         this.server.setRequestHandler(ListToolsRequestSchema, async () => {
             return {
@@ -258,60 +260,60 @@ class FHIRMCPServer {
                             type: 'object',
                             properties: {},
                         },
-                    }
+                    },
                 ],
             };
-        })
+        });
 
         this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
-            const {name, arguments: args} = request.params;
+            const { name, arguments: args } = request.params;
 
             try {
                 switch (name) {
 
-                    case 'fhir_search':
-                        return await this._search(args as {
+                case 'fhir_search':
+                    return await this._search(args as {
                             resourceType: string;
-                            parameters?: Record<string, any>
+                            parameters?: Record<string, unknown>
                         });
 
-                    case 'fhir_read':
-                        return await this._read(args as { resourceType: string; id: string });
+                case 'fhir_read':
+                    return await this._read(args as { resourceType: string; id: string });
 
-                    case 'fhir_create':
-                        return await this._create(args as { resourceType: string; resource: any });
+                case 'fhir_create':
+                    return await this._create(args as { resourceType: string; resource: any });
 
-                    case 'fhir_update':
-                        return await this._update(args as { resourceType: string; id: string; resource: any });
+                case 'fhir_update':
+                    return await this._update(args as { resourceType: string; id: string; resource: any });
 
-                    case 'fhir_delete':
-                        return await this._delete(args as { resourceType: string; id: string });
+                case 'fhir_delete':
+                    return await this._delete(args as { resourceType: string; id: string });
 
-                    case 'fhir_validate':
-                        return await this._validate(args as { resourceType: string; resource: any });
+                case 'fhir_validate':
+                    return await this._validate(args as { resourceType: string; resource: any });
 
-                    case 'fhir_generate_narrative':
-                        return await this._generateNarrative(args as { resourceType: string; resource: any; style?: string });
+                case 'fhir_generate_narrative':
+                    return await this._generateNarrative(args as { resourceType: string; resource: any; style?: string });
 
-                    case 'fhir_capability':
-                        return await this._getCapability();
+                case 'fhir_capability':
+                    return await this._getCapability();
 
-                    case 'get_config':
-                        return await this._getConfig();
+                case 'get_config':
+                    return await this._getConfig();
 
-                    case 'send_feedback':
-                        return await this._sendFeedback(args as {
+                case 'send_feedback':
+                    return await this._sendFeedback(args as {
                             message: string;
                             level?: string;
                             context?: any
                         });
 
-                    case 'ping':
-                        return await this._ping();
+                case 'ping':
+                    return await this._ping();
 
-                    default:
-                        throw new Error(`Unknown tool: ${name}`);
+                default:
+                    throw new Error(`Unknown tool: ${name}`);
                 }
             } catch (error) {
                 return {
@@ -342,7 +344,7 @@ class FHIRMCPServer {
 
         this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 
-            const {uri} = request.params;
+            const { uri } = request.params;
 
             if (uri === 'config://server') {
                 return {
@@ -357,7 +359,7 @@ class FHIRMCPServer {
                                     hasApiKey: !!this.config.apiKey,
                                 },
                                 null,
-                                2
+                                2,
                             ),
                         },
                     ],
@@ -368,7 +370,6 @@ class FHIRMCPServer {
         });
     }
 
-
     /**
      * Searches for FHIR resources of a specific type with optional search parameters
      * @param args Object containing resourceType and optional search parameters
@@ -376,14 +377,14 @@ class FHIRMCPServer {
      */
     private async _search(args: { resourceType: string; parameters?: Record<string, any> }): Promise<any> {
 
-        const {resourceType, parameters = {}} = args;
+        const { resourceType, parameters = {} } = args;
         const searchParams = new URLSearchParams();
 
         Object.entries(parameters).forEach(([key, value]) => {
             searchParams.append(key, String(value));
         });
 
-        searchParams.append('_summary', 'data')
+        searchParams.append('_summary', 'data');
 
         const url = `fhir/${resourceType}?${searchParams.toString()}`;
         const response = await this._executeRequest(url, 'GET');
@@ -406,9 +407,9 @@ class FHIRMCPServer {
     private async _read(args: { resourceType: string; id: string }): Promise<any> {
 
         const searchParams = new URLSearchParams();
-        searchParams.append('_summary', 'data')
+        searchParams.append('_summary', 'data');
 
-        const {resourceType, id} = args;
+        const { resourceType, id } = args;
         const url = `fhir/${resourceType}/${id}?${searchParams.toString()}`;
 
         const response = await this._executeRequest(url, 'GET');
@@ -425,8 +426,8 @@ class FHIRMCPServer {
 
     private async _create(args: { resourceType: string; resource: any }): Promise<any> {
 
-        const {resourceType, resource} = args;
-        const url = `fhir/${resourceType}`
+        const { resourceType, resource } = args;
+        const url = `fhir/${resourceType}`;
 
         try {
 
@@ -455,7 +456,7 @@ class FHIRMCPServer {
 
     private async _validate(args: { resourceType: string; resource: any }): Promise<any> {
 
-        const {resourceType, resource} = args;
+        const { resourceType, resource } = args;
         const url = `fhir/${resourceType}/$validate`;
 
         try {
@@ -485,7 +486,7 @@ class FHIRMCPServer {
 
     private async _generateNarrative(args: { resourceType: string; resource: any; style?: string }): Promise<any> {
 
-        const {resourceType, resource, style = 'clinical'} = args;
+        const { resourceType, resource, style = 'clinical' } = args;
         
         try {
             // Generate narrative client-side based on resource type
@@ -496,8 +497,8 @@ class FHIRMCPServer {
                 ...resource,
                 text: {
                     status: 'generated',
-                    div: narrativeHtml
-                }
+                    div: narrativeHtml,
+                },
             };
 
             return {
@@ -518,7 +519,7 @@ class FHIRMCPServer {
                         type: 'text',
                         text: JSON.stringify({
                             error: `Client-side narrative generation failed: ${errorMessage}`,
-                            originalResource: resource
+                            originalResource: resource,
                         }, null, 2),
                     },
                 ],
@@ -529,7 +530,7 @@ class FHIRMCPServer {
 
     private async _update(args: { resourceType: string; id: string; resource: any }): Promise<any> {
 
-        const {resourceType, id, resource} = args;
+        const { resourceType, id, resource } = args;
         const url = `fhir/${resourceType}/${id}`;
 
         return await this._executeRequest(url, 'PUT', resource).then(response => {
@@ -563,7 +564,7 @@ class FHIRMCPServer {
      */
     private async _delete(args: { resourceType: string; id: string }): Promise<any> {
 
-        const {resourceType, id} = args;
+        const { resourceType, id } = args;
         const url = `fhir/${resourceType}/${id}`;
 
         const response = await this._executeRequest(url, 'DELETE');
@@ -584,7 +585,7 @@ class FHIRMCPServer {
      */
     private async _getCapability(): Promise<any> {
 
-        const url = `/metadata`;
+        const url = '/metadata';
 
         try {
             const response = await this._executeRequest(url, 'GET');
@@ -627,10 +628,10 @@ class FHIRMCPServer {
                         {
                             url: this.config.url,
                             timeout: this.config.timeout,
-                            hasApiKey: !!this.config.apiKey
+                            hasApiKey: !!this.config.apiKey,
                         },
                         null,
-                        2
+                        2,
                     ),
                 },
             ],
@@ -642,9 +643,9 @@ class FHIRMCPServer {
      * @param args Object containing message, optional log level and context
      * @returns Promise resolving to confirmation wrapped in MCP content format
      */
-    private async _sendFeedback(args: { message: string; level?: string; context?: any }): Promise<any> {
+    private async _sendFeedback(args: { message: string; level?: string; context?: object }): Promise<object> {
 
-        const {message, level = 'info', context} = args;
+        const { message, level = 'info', context } = args;
         const timestamp = new Date().toISOString();
 
         const logPrefix = `[${timestamp}] [${level.toUpperCase()}]`;
@@ -653,19 +654,19 @@ class FHIRMCPServer {
             : `${logPrefix} ${message}`;
 
         switch (level.toLowerCase()) {
-            case 'error':
-                console.error(logMessage);
-                break;
-            case 'warn':
-                console.error(logMessage);
-                break;
-            case 'debug':
-                console.error(logMessage);
-                break;
-            case 'info':
-            default:
-                console.error(logMessage);
-                break;
+        case 'error':
+            console.error(logMessage);
+            break;
+        case 'warn':
+            console.error(logMessage);
+            break;
+        case 'debug':
+            console.error(logMessage);
+            break;
+        case 'info':
+        default:
+            console.error(logMessage);
+            break;
         }
 
         return {
@@ -682,12 +683,12 @@ class FHIRMCPServer {
      * Health check ping that returns server status
      * @returns Promise resolving to status OK wrapped in MCP content format
      */
-    private async _ping(): Promise<any> {
+    private async _ping(): Promise<object> {
         return {
             content: [
                 {
                     type: 'text',
-                    text: JSON.stringify({status: "OK"}, null, 2),
+                    text: JSON.stringify({ status: 'OK' }, null, 2),
                 },
             ],
         };
@@ -700,7 +701,7 @@ class FHIRMCPServer {
      * @param payload Optional request body
      * @returns Promise resolving to response data
      */
-    private async _executeRequest(url: string, method: string, payload?: object): Promise<any> {
+    private async _executeRequest(url: string, method: string, payload?: object): Promise<object> {
 
         const config = {
             baseURL: this.config.url,
@@ -709,8 +710,8 @@ class FHIRMCPServer {
             headers: {
                 'Accept': 'application/fhir+json',
                 'Content-Type': 'application/json',
-            }
-        }
+            },
+        };
 
         if (payload && (method.toUpperCase() === 'POST' || method.toUpperCase() === 'PUT')){
 
@@ -719,7 +720,7 @@ class FHIRMCPServer {
                 enumerable: true,
                 writable: true,
                 configurable: true,
-            })
+            });
         }
 
         return await this.instance.request(config).then(response => {
@@ -728,8 +729,7 @@ class FHIRMCPServer {
 
                 try {
                     return JSON.parse(response.data);
-                } catch (parseError) {
-
+                } catch {
                     return response.data;
                 }
             }
@@ -738,13 +738,13 @@ class FHIRMCPServer {
 
         }).catch(async (error) => {
 
-            console.error(`[EXECUTE_REQUEST] Error details:`, {
+            console.error('[EXECUTE_REQUEST] Error details:', {
                 message: error.message,
                 code: error.code,
                 status: error.response?.status,
                 statusText: error.response?.statusText,
                 responseData: error.response?.data,
-                responseHeaders: error.response?.headers
+                responseHeaders: error.response?.headers,
             });
 
             await this._sendFeedback({
@@ -753,20 +753,20 @@ class FHIRMCPServer {
                 context: {
                     error,
                     config,
-                    response: error.response
-                }
+                    response: error.response,
+                },
             });
 
             // Re-throw the error to be handled by the caller
             throw error;
-        })
+        });
     }
 
     /**
      * Starts the MCP server using stdio transport
      * @returns Promise that resolves when server is running
      */
-    async run() {
+    async run(): Promise<void> {
 
         const transport = new StdioServerTransport();
         await this.server.connect(transport);
@@ -774,7 +774,7 @@ class FHIRMCPServer {
     }
 }
 
-async function main() {
+async function main(): Promise<void> {
 
     try {
         const server = new FHIRMCPServer();

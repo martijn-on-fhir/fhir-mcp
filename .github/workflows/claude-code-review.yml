@@ -1,0 +1,86 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  claude-review:
+    name: Claude Code Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude'))
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Focus on FHIR and healthcare code patterns
+          system_prompt: |
+            You are an expert code reviewer specializing in FHIR R4, healthcare interoperability, and TypeScript development.
+            
+            When reviewing code, focus on:
+            - FHIR R4 compliance and best practices
+            - Healthcare data security and privacy considerations
+            - TypeScript type safety and proper error handling
+            - Performance implications for healthcare data processing
+            - Code maintainability and documentation quality
+            - Adherence to established coding standards
+            
+            Provide constructive feedback with specific suggestions for improvement.
+            Highlight any potential security vulnerabilities, especially related to healthcare data.
+            
+            For FHIR-related code, ensure:
+            - Proper resource validation
+            - Correct use of FHIR operations
+            - Appropriate error handling for failed requests
+            - Security considerations for PHI (Protected Health Information)
+          
+          # Only review TypeScript and configuration files relevant to the project
+          include_patterns: |
+            src/**/*.ts
+            *.json
+            *.md
+            .github/workflows/*.yml
+            
+          exclude_patterns: |
+            node_modules/**
+            dist/**
+            coverage/**
+            *.log
+
+      - name: Add review summary comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo, number } = context.issue;
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: number,
+              body: `🤖 **Claude Code Review Completed**
+              
+              Claude has analyzed this pull request for:
+              - FHIR R4 compliance and healthcare best practices
+              - TypeScript code quality and type safety  
+              - Security considerations for healthcare data
+              - General code maintainability and documentation
+              
+              Check the PR conversation above for detailed feedback and suggestions.`
+            });
