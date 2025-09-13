@@ -99,3 +99,5 @@ HTTP 500 errors during create operations can be caused by:
 4. **Authentication/authorization** - Missing or invalid API keys
 
 Use the `fhir_capability` tool to check server capabilities before creating resources.
+- to memorize
+- to memorize
