@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.1.0...v1.2.0) (2025-09-13)
+
+
+### Features
+
+* add ping health check endpoint and reorganize config files ([eb4960c](https://github.com/martijn-on-fhir/fhir-mcp/commit/eb4960ca10dde388422558356d4e64c0638d8177))
+
 # [1.1.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.0.0...v1.1.0) (2025-09-12)
 
 
