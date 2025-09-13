@@ -5,8 +5,9 @@ import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
     CallToolRequestSchema, ListResourcesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import {loadConfigWithFile as loadConfig} from './lib/config-loader.js';
-import {ServerConfig} from './lib/config.js';
+import {loadConfigWithFile as loadConfig} from './lib/configuration/config-loader.js';
+import {ServerConfig} from './lib/configuration/config.js';
+import {Narrative, NarrativeStyle} from './lib/narrative/narrative.js';
 import {Axios} from 'axios';
 
 /**
@@ -171,6 +172,47 @@ class FHIRMCPServer {
                         },
                     },
                     {
+                        name: 'fhir_validate',
+                        description: 'Validate a FHIR resource against the server',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                resourceType: {
+                                    type: 'string',
+                                    description: 'FHIR resource type',
+                                },
+                                resource: {
+                                    type: 'object',
+                                    description: 'FHIR resource data to validate',
+                                },
+                            },
+                            required: ['resourceType', 'resource'],
+                        },
+                    },
+                    {
+                        name: 'fhir_generate_narrative',
+                        description: 'Generate human-readable clinical narratives from FHIR resources. Creates structured HTML text summaries that make FHIR data easily understandable for healthcare providers and patients. Supports Patient, Observation, Encounter, Condition, MedicationRequest, DiagnosticReport, and other resource types with intelligent formatting.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                resourceType: {
+                                    type: 'string',
+                                    description: 'FHIR resource type (e.g., Patient, Observation, Encounter, Condition, MedicationRequest, DiagnosticReport)',
+                                },
+                                resource: {
+                                    type: 'object',
+                                    description: 'Complete FHIR resource JSON object to generate narrative text for',
+                                },
+                                style: {
+                                    type: 'string',
+                                    enum: ['clinical', 'patient-friendly', 'technical'],
+                                    description: 'Narrative style: clinical (structured medical summary), patient-friendly (conversational), or technical (detailed). Defaults to clinical.',
+                                },
+                            },
+                            required: ['resourceType', 'resource'],
+                        },
+                    },
+                    {
                         name: 'fhir_capability',
                         description: 'Get FHIR server capability statement',
                         inputSchema: {
@@ -245,6 +287,12 @@ class FHIRMCPServer {
 
                     case 'fhir_delete':
                         return await this._delete(args as { resourceType: string; id: string });
+
+                    case 'fhir_validate':
+                        return await this._validate(args as { resourceType: string; resource: any });
+
+                    case 'fhir_generate_narrative':
+                        return await this._generateNarrative(args as { resourceType: string; resource: any; style?: string });
 
                     case 'fhir_capability':
                         return await this._getCapability();
@@ -401,6 +449,80 @@ class FHIRMCPServer {
                         text: JSON.stringify(error instanceof Error ? error.message : String(error), null, 2),
                     },
                 ],
+            };
+        }
+    }
+
+    private async _validate(args: { resourceType: string; resource: any }): Promise<any> {
+
+        const {resourceType, resource} = args;
+        const url = `fhir/${resourceType}/$validate`;
+
+        try {
+
+            const response = await this._executeRequest(url, 'POST', resource);
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify(response, null, 2),
+                    },
+                ],
+            };
+        } catch (error) {
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify(error instanceof Error ? error.message : String(error), null, 2),
+                    },
+                ],
+            };
+        }
+    }
+
+    private async _generateNarrative(args: { resourceType: string; resource: any; style?: string }): Promise<any> {
+
+        const {resourceType, resource, style = 'clinical'} = args;
+        
+        try {
+            // Generate narrative client-side based on resource type
+            const narrativeHtml = Narrative.generate(resourceType, resource, { style: style as NarrativeStyle });
+            
+            // Create updated resource with narrative
+            const resourceWithNarrative = {
+                ...resource,
+                text: {
+                    status: 'generated',
+                    div: narrativeHtml
+                }
+            };
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify(resourceWithNarrative, null, 2),
+                    },
+                ],
+            };
+        } catch (error) {
+            
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify({
+                            error: `Client-side narrative generation failed: ${errorMessage}`,
+                            originalResource: resource
+                        }, null, 2),
+                    },
+                ],
+                isError: true,
             };
         }
     }
