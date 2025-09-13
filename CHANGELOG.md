@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.2.0...v1.3.0) (2025-09-13)
+
+
+### Features
+
+* add FHIR validation and narrative generation tools ([d01cf3f](https://github.com/martijn-on-fhir/fhir-mcp/commit/d01cf3fa0994538b0f163abefc24649a218e1c33))
+
 # [1.2.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.1.0...v1.2.0) (2025-09-13)
 
 
