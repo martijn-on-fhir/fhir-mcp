@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.5.0...v1.5.1) (2025-09-13)
+
+
+### Bug Fixes
+
+* update Claude security review workflow to use correct action reference ([bf1c5d5](https://github.com/martijn-on-fhir/fhir-mcp/commit/bf1c5d588b5001f5a0a7c7a3e3e8027f613378ba))
+
 # [1.5.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.4.0...v1.5.0) (2025-09-13)
 
 
