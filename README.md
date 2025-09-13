@@ -80,6 +80,45 @@ npm start https://your-fhir-server.com/fhir
 
 - `config://server`: Server configuration information
 
+## FHIR R4 Documentation System
+
+The server includes a comprehensive FHIR R4 documentation provider that gives Claude deep insight into the FHIR specification:
+
+### Built-in FHIR Documentation
+
+#### Core Documentation Resources
+- **`fhir://r4/specification`** - Complete FHIR R4 specification overview and key concepts
+- **`fhir://r4/resources`** - All 145+ FHIR resource types with descriptions and HL7.org links
+- **`fhir://r4/datatypes`** - Primitive, complex, and special data types reference
+- **`fhir://r4/search`** - Search parameters, modifiers, chaining, and examples
+- **`fhir://r4/validation`** - Validation rules, invariants, and profile conformance
+- **`fhir://r4/terminology`** - Code systems, value sets, and terminology services
+
+#### Resource Categories Covered
+- **Foundation Resources**: Base types, elements, extensions, narratives
+- **Base Resources**: Patient, Practitioner, Organization, Location, Device
+- **Clinical Resources**: Observation, Condition, Procedure, Medication*, Encounter, DiagnosticReport
+- **Financial Resources**: Claim, Coverage, ExplanationOfBenefit, Account
+- **Workflow Resources**: Appointment, Schedule, Task, Slot
+
+#### Advanced FHIR Features
+- **Search Capabilities**: Chaining, reverse chaining, modifiers, result parameters
+- **Validation Framework**: Structural, cardinality, terminology, profile validation
+- **Terminology Services**: $lookup, $validate-code, $expand, $translate operations
+- **Data Types**: 18 primitive types, 15+ complex types, special healthcare types
+- **Best Practices**: Implementation guidance, performance tips, security considerations
+
+### Benefits for AI Integration
+
+✅ **Specification Compliance**: Claude has direct access to official FHIR R4 specification
+✅ **Resource Expertise**: Detailed knowledge of all FHIR resource types and their purposes
+✅ **Validation Guidance**: Understanding of FHIR validation rules and requirements
+✅ **Search Mastery**: Advanced search capabilities with proper parameter usage
+✅ **Terminology Awareness**: Code systems, value sets, and binding requirements
+✅ **Implementation Support**: Best practices for FHIR API development and integration
+
+The documentation system is powered by the `FHIRDocumentationProvider` class, ensuring maintainable and up-to-date FHIR knowledge.
+
 ## FHIR Intelligent Prompts System
 
 The server includes a comprehensive prompt management system providing contextual AI assistance for FHIR operations:
@@ -137,6 +176,32 @@ fhir_context_prompt --resourceType=Patient --workflow=admission --userType=clini
 - **Localization Ready**: Framework supports multiple languages and regional variations
 - **Caching & Performance**: Intelligent caching for fast prompt retrieval
 
+### Using FHIR Documentation Resources
+
+Claude can access comprehensive FHIR R4 documentation through MCP resources:
+
+```javascript
+// Access FHIR specification overview
+await client.readResource('fhir://r4/specification')
+
+// Get complete resource type definitions
+await client.readResource('fhir://r4/resources')
+
+// Learn about FHIR data types
+await client.readResource('fhir://r4/datatypes')
+
+// Master FHIR search capabilities
+await client.readResource('fhir://r4/search')
+
+// Understand validation requirements
+await client.readResource('fhir://r4/validation')
+
+// Access terminology guidance
+await client.readResource('fhir://r4/terminology')
+```
+
+These resources provide Claude with deep knowledge of FHIR R4 specifications, enabling more accurate and compliant healthcare integrations.
+
 ## Example Usage with Claude Desktop
 
 Add to your Claude Desktop configuration:
@@ -170,11 +235,13 @@ Add to your Claude Desktop configuration:
 ✅ **Core FHIR Operations** - Full CRUD operations with validation
 ✅ **Resource Validation** - Complete R4 specification compliance checking
 ✅ **Narrative Generation** - Human-readable resource descriptions
+✅ **Comprehensive FHIR Documentation** - Built-in R4 specification, resource types, data types, search, validation, and terminology guidance
 ✅ **Intelligent Prompts** - 50+ contextual AI prompts for healthcare workflows
 ✅ **Security Framework** - HIPAA-compliant data handling and audit logging
 ✅ **Multi-Server Support** - Works with any FHIR R4 compatible server
 ✅ **MCP Integration** - Full Model Context Protocol compatibility
 ✅ **TypeScript** - Complete type safety and IntelliSense support
+✅ **Modular Architecture** - Clean separation with dedicated providers for prompts and documentation
 
 ### Development Scripts
 
