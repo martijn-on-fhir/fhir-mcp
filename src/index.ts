@@ -634,7 +634,7 @@ class FHIRMCPServer {
 
             return {
                 resourceTemplates: resourceTemplates.map(template => ({
-                    uri: template.uri,
+                    uriTemplate: template.uri,
                     name: template.name,
                     description: template.description,
                     mimeType: template.mimeType,

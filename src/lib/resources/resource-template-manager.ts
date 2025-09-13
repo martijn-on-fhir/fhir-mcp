@@ -4,9 +4,8 @@
  */
 
 export interface ResourceTemplateParameter {
-    name: string;
     description: string;
-    type: 'string' | 'enum';
+    type?: 'string' | 'number' | 'boolean';
     enum?: string[];
     required?: boolean;
     default?: string;
@@ -104,9 +103,8 @@ export class ResourceTemplateManager {
                 mimeType: 'text/plain',
                 parameters: {
                     docType: {
-                        name: 'docType',
                         description: 'Type of FHIR R4 documentation to retrieve',
-                        type: 'enum',
+                        type: 'string',
                         enum: ['specification', 'resources', 'datatypes', 'search', 'validation', 'terminology'],
                         required: true
                     }
@@ -121,14 +119,12 @@ export class ResourceTemplateManager {
                 mimeType: 'text/plain',
                 parameters: {
                     category: {
-                        name: 'category',
                         description: 'Prompt category (clinical, security, technical, workflow)',
-                        type: 'enum',
+                        type: 'string',
                         enum: ['clinical', 'security', 'technical', 'workflow'],
                         required: true
                     },
                     promptId: {
-                        name: 'promptId',
                         description: 'Specific prompt identifier within the category',
                         type: 'string',
                         required: true
@@ -144,9 +140,8 @@ export class ResourceTemplateManager {
                 mimeType: 'text/plain',
                 parameters: {
                     resourceType: {
-                        name: 'resourceType',
                         description: 'FHIR resource type (Patient, Observation, Condition, etc.)',
-                        type: 'enum',
+                        type: 'string',
                         enum: [
                             'Patient', 'Practitioner', 'Organization', 'Location', 'Device',
                             'Observation', 'Condition', 'Procedure', 'MedicationRequest',
@@ -167,16 +162,14 @@ export class ResourceTemplateManager {
                 mimeType: 'application/json',
                 parameters: {
                     workflow: {
-                        name: 'workflow',
                         description: 'Healthcare workflow type',
-                        type: 'enum',
+                        type: 'string',
                         enum: ['admission', 'discharge', 'medication-review', 'care-planning', 'billing', 'scheduling'],
                         required: true
                     },
                     userType: {
-                        name: 'userType',
                         description: 'Type of healthcare professional',
-                        type: 'enum',
+                        type: 'string',
                         enum: ['clinical', 'administrative', 'technical', 'billing'],
                         default: 'clinical'
                     }
@@ -191,9 +184,8 @@ export class ResourceTemplateManager {
                 mimeType: 'application/json',
                 parameters: {
                     configType: {
-                        name: 'configType',
                         description: 'Type of configuration to retrieve',
-                        type: 'enum',
+                        type: 'string',
                         enum: ['server', 'fhir', 'security', 'prompts', 'documentation'],
                         required: true
                     }
@@ -208,15 +200,13 @@ export class ResourceTemplateManager {
                 mimeType: 'text/plain',
                 parameters: {
                     resourceType: {
-                        name: 'resourceType',
                         description: 'FHIR resource type to validate',
                         type: 'string',
                         required: true
                     },
                     level: {
-                        name: 'level',
                         description: 'Validation level',
-                        type: 'enum',
+                        type: 'string',
                         enum: ['structure', 'cardinality', 'terminology', 'profile', 'invariants'],
                         default: 'structure'
                     }
@@ -231,7 +221,6 @@ export class ResourceTemplateManager {
                 mimeType: 'text/plain',
                 parameters: {
                     resourceType: {
-                        name: 'resourceType',
                         description: 'FHIR resource type for search examples',
                         type: 'string',
                         required: true
