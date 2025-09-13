@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {Server} from '@modelcontextprotocol/sdk/server/index.js';
+import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
     CallToolRequestSchema, ListResourcesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { loadConfigWithFile as loadConfig } from './lib/configuration/config-loader.js';
-import { ServerConfig } from './lib/configuration/config.js';
-import { Narrative, NarrativeStyle } from './lib/narrative/narrative.js';
-import { FHIRPromptManager } from './lib/prompts/prompt-manager.js';
-import { Axios } from 'axios';
+import {loadConfigWithFile as loadConfig} from './lib/configuration/config-loader.js';
+import {ServerConfig} from './lib/configuration/config.js';
+import {Narrative, NarrativeStyle} from './lib/narrative/narrative.js';
+import {FHIRPromptManager} from './lib/prompts/prompt-manager.js';
+import {FHIRDocumentationProvider} from './lib/documentation/fhir-documentation-provider.js';
+import {Axios} from 'axios';
 
 /**
  * FHIR Model Context Protocol Server implementation
@@ -17,18 +18,69 @@ import { Axios } from 'axios';
  */
 class FHIRMCPServer {
 
+    /**
+     * Represents the server instance that is used to handle incoming requests
+     * and manage responses. The `server` variable typically encapsulates the
+     * configuration, routing, middleware, and other server-related logic needed
+     * to operate a web or network service.
+     *
+     * This variable is often responsible for initiating and managing the lifecycle
+     * of the server, including starting and stopping the service and managing
+     * connections.
+     *
+     * @type {Server}
+     */
     private server: Server;
 
+    /**
+     * A configuration object for the server settings.
+     *
+     * This object contains the necessary configuration options
+     * required to set up and run the server. It may include properties
+     * such as host, port, protocol, security configurations, and more.
+     * The structure and details of this configuration are essential to
+     * ensuring the server operates as expected.
+     */
     private config: ServerConfig;
 
+    /**
+     * An instance of the Axios HTTP client, pre-configured with specific defaults.
+     * This instance can be used to perform HTTP requests such as GET, POST, PUT, DELETE, etc.
+     * It supports request and response interceptors, error handling, and other configurable options.
+     *
+     * This property is initialized before usage and is guaranteed to exist (denoted by the non-null assertion `!`).
+     */
     private instance!: Axios;
 
+    /**
+     * An instance of `FHIRPromptManager` responsible for managing and orchestrating
+     * prompts related to FHIR (Fast Healthcare Interoperability Resources) operations.
+     *
+     * This variable serves as the principal interface for handling FHIR-based prompts,
+     * enabling the application to request input, display messages, and manage interactions
+     * in compliance with FHIR standards and workflows.
+     *
+     * It supports functions that facilitate streamlined communication and data validation
+     * as required by healthcare applications using FHIR protocols.
+     */
     private promptManager: FHIRPromptManager;
+
+    /**
+     * An instance of `FHIRDocumentationProvider` responsible for providing comprehensive
+     * FHIR R4 specification and reference documentation.
+     *
+     * This provider offers detailed documentation resources including resource types,
+     * data types, search parameters, validation rules, and terminology guidance.
+     * It serves as the authoritative source for FHIR R4 specification information
+     * accessible through the MCP resource system.
+     */
+    private documentationProvider: FHIRDocumentationProvider;
 
     constructor() {
 
         this.config = loadConfig();
         this.promptManager = new FHIRPromptManager();
+        this.documentationProvider = new FHIRDocumentationProvider();
 
         this.server = new Server({
             name: 'fhir-mcp-server',
@@ -46,6 +98,17 @@ class FHIRMCPServer {
         this._setUpAxios();
     }
 
+    /**
+     * Sets up an Axios instance with predefined configurations like `baseURL`, headers, and timeouts.
+     * This method initializes the Axios instance for the current configuration and includes logging
+     * for debugging purposes during request and response transformations.
+     *
+     * It also transforms outgoing requests to JSON if the payload is an object and logs the transformed
+     * data type and size. Incoming responses are logged with the data type and size for debugging and
+     * further processing.
+     *
+     * @return {void} Does not return a value.
+     */
     private _setUpAxios(): void {
 
         console.error(`[AXIOS_SETUP] Setting up Axios with baseURL: ${this.config.url}`);
@@ -78,6 +141,17 @@ class FHIRMCPServer {
         console.error('[AXIOS_SETUP] Axios instance created successfully');
     }
 
+    /**
+     * Sets up request handlers for various server functionalities related to FHIR operations
+     * and other utility commands.
+     *
+     * This method registers and configures handlers for tools including FHIR resource
+     * manipulation (search, read, create, update, delete, validate), capabilities retrieval,
+     * narrative generation, server configuration, feedback logging, health check,
+     * and contextual FHIR prompt processing.
+     *
+     * @return {void} No return value. This method is used for initializing server handlers.
+     */
     private _setupHandlers(): void {
 
         this.server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -328,7 +402,7 @@ class FHIRMCPServer {
 
         this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
-            const { name, arguments: args } = request.params;
+            const {name, arguments: args} = request.params;
 
             try {
                 switch (name) {
@@ -355,7 +429,11 @@ class FHIRMCPServer {
                     return await this._validate(args as { resourceType: string; resource: any });
 
                 case 'fhir_generate_narrative':
-                    return await this._generateNarrative(args as { resourceType: string; resource: any; style?: string });
+                    return await this._generateNarrative(args as {
+                            resourceType: string;
+                            resource: any;
+                            style?: string
+                        });
 
                 case 'fhir_capability':
                     return await this._getCapability();
@@ -380,7 +458,11 @@ class FHIRMCPServer {
                     return await this._getPrompt(args as { id: string; args?: Record<string, any> });
 
                 case 'fhir_context_prompt':
-                    return await this._getContextPrompt(args as { resourceType?: string; workflow?: string; userType?: string });
+                    return await this._getContextPrompt(args as {
+                            resourceType?: string;
+                            workflow?: string;
+                            userType?: string
+                        });
 
                 default:
                     throw new Error(`Unknown tool: ${name}`);
@@ -406,6 +488,8 @@ class FHIRMCPServer {
                 description: prompt.description,
             }));
 
+            const fhirDocumentationResources = this.documentationProvider.getAvailableResources();
+
             return {
                 resources: [
                     {
@@ -420,6 +504,7 @@ class FHIRMCPServer {
                         name: 'All FHIR Prompts',
                         description: 'Complete list of available FHIR R4 expert prompts',
                     },
+                    ...fhirDocumentationResources,
                     ...promptResources,
                 ],
             };
@@ -427,7 +512,7 @@ class FHIRMCPServer {
 
         this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 
-            const { uri } = request.params;
+            const {uri} = request.params;
 
             if (uri === 'config://server') {
                 return {
@@ -464,7 +549,7 @@ class FHIRMCPServer {
             if (uri.startsWith('prompt://fhir/')) {
                 const promptId = uri.replace('prompt://fhir/', '');
                 const prompt = this.promptManager.getPrompt(promptId);
-                
+
                 if (!prompt) {
                     throw new Error(`Prompt not found: ${promptId}`);
                 }
@@ -480,6 +565,11 @@ class FHIRMCPServer {
                 };
             }
 
+            // FHIR R4 Documentation Resources
+            if (uri.startsWith('fhir://r4/')) {
+                return await this.documentationProvider.getFHIRDocumentation(uri);
+            }
+
             throw new Error(`Unknown resource: ${uri}`);
         });
     }
@@ -491,7 +581,7 @@ class FHIRMCPServer {
      */
     private async _search(args: { resourceType: string; parameters?: Record<string, any> }): Promise<any> {
 
-        const { resourceType, parameters = {} } = args;
+        const {resourceType, parameters = {}} = args;
         const searchParams = new URLSearchParams();
 
         Object.entries(parameters).forEach(([key, value]) => {
@@ -523,7 +613,7 @@ class FHIRMCPServer {
         const searchParams = new URLSearchParams();
         searchParams.append('_summary', 'data');
 
-        const { resourceType, id } = args;
+        const {resourceType, id} = args;
         const url = `fhir/${resourceType}/${id}?${searchParams.toString()}`;
 
         const response = await this._executeRequest(url, 'GET');
@@ -540,7 +630,7 @@ class FHIRMCPServer {
 
     private async _create(args: { resourceType: string; resource: any }): Promise<any> {
 
-        const { resourceType, resource } = args;
+        const {resourceType, resource} = args;
         const url = `fhir/${resourceType}`;
 
         try {
@@ -570,7 +660,7 @@ class FHIRMCPServer {
 
     private async _validate(args: { resourceType: string; resource: any }): Promise<any> {
 
-        const { resourceType, resource } = args;
+        const {resourceType, resource} = args;
         const url = `fhir/${resourceType}/$validate`;
 
         try {
@@ -600,12 +690,12 @@ class FHIRMCPServer {
 
     private async _generateNarrative(args: { resourceType: string; resource: any; style?: string }): Promise<any> {
 
-        const { resourceType, resource, style = 'clinical' } = args;
-        
+        const {resourceType, resource, style = 'clinical'} = args;
+
         try {
             // Generate narrative client-side based on resource type
-            const narrativeHtml = Narrative.generate(resourceType, resource, { style: style as NarrativeStyle });
-            
+            const narrativeHtml = Narrative.generate(resourceType, resource, {style: style as NarrativeStyle});
+
             // Create updated resource with narrative
             const resourceWithNarrative = {
                 ...resource,
@@ -624,9 +714,9 @@ class FHIRMCPServer {
                 ],
             };
         } catch (error) {
-            
+
             const errorMessage = error instanceof Error ? error.message : String(error);
-            
+
             return {
                 content: [
                     {
@@ -644,7 +734,7 @@ class FHIRMCPServer {
 
     private async _update(args: { resourceType: string; id: string; resource: any }): Promise<any> {
 
-        const { resourceType, id, resource } = args;
+        const {resourceType, id, resource} = args;
         const url = `fhir/${resourceType}/${id}`;
 
         return await this._executeRequest(url, 'PUT', resource).then(response => {
@@ -678,7 +768,7 @@ class FHIRMCPServer {
      */
     private async _delete(args: { resourceType: string; id: string }): Promise<any> {
 
-        const { resourceType, id } = args;
+        const {resourceType, id} = args;
         const url = `fhir/${resourceType}/${id}`;
 
         const response = await this._executeRequest(url, 'DELETE');
@@ -759,7 +849,7 @@ class FHIRMCPServer {
      */
     private async _sendFeedback(args: { message: string; level?: string; context?: object }): Promise<object> {
 
-        const { message, level = 'info', context } = args;
+        const {message, level = 'info', context} = args;
         const timestamp = new Date().toISOString();
 
         const logPrefix = `[${timestamp}] [${level.toUpperCase()}]`;
@@ -802,7 +892,7 @@ class FHIRMCPServer {
             content: [
                 {
                     type: 'text',
-                    text: JSON.stringify({ status: 'OK' }, null, 2),
+                    text: JSON.stringify({status: 'OK'}, null, 2),
                 },
             ],
         };
@@ -814,7 +904,7 @@ class FHIRMCPServer {
      * @returns Promise resolving to list of prompts wrapped in MCP content format
      */
     private async _listPrompts(args: { tag?: string; resourceType?: string }): Promise<object> {
-        const { tag, resourceType } = args;
+        const {tag, resourceType} = args;
 
         let prompts = this.promptManager.listAvailablePrompts();
 
@@ -844,7 +934,7 @@ class FHIRMCPServer {
      * @returns Promise resolving to prompt content wrapped in MCP content format
      */
     private async _getPrompt(args: { id: string; args?: Record<string, any> }): Promise<object> {
-        const { id, args: templateArgs = {} } = args;
+        const {id, args: templateArgs = {}} = args;
 
         try {
             const promptText = this.promptManager.generatePrompt(id, templateArgs);
@@ -882,8 +972,12 @@ class FHIRMCPServer {
      * @param args Object containing optional resourceType, workflow, and userType
      * @returns Promise resolving to contextual prompt wrapped in MCP content format
      */
-    private async _getContextPrompt(args: { resourceType?: string; workflow?: string; userType?: string }): Promise<object> {
-        const { resourceType, workflow, userType = 'clinical' } = args;
+    private async _getContextPrompt(args: {
+        resourceType?: string;
+        workflow?: string;
+        userType?: string
+    }): Promise<object> {
+        const {resourceType, workflow, userType = 'clinical'} = args;
 
         try {
             const contextualPrompt = this.promptManager.getClinicalContextPrompt(resourceType, workflow, userType);
@@ -935,7 +1029,7 @@ class FHIRMCPServer {
             },
         };
 
-        if (payload && (method.toUpperCase() === 'POST' || method.toUpperCase() === 'PUT')){
+        if (payload && (method.toUpperCase() === 'POST' || method.toUpperCase() === 'PUT')) {
 
             Object.defineProperty(config, 'data', {
                 value: payload,
