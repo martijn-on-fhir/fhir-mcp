@@ -62,6 +62,12 @@ npm start https://your-fhir-server.com/fhir
 - `fhir_delete`: Delete FHIR resources by ID
 - `fhir_capability`: Get FHIR server capabilities and supported resources
 
+### Interactive FHIR Operations
+- `fhir_create_interactive`: Create FHIR resources with guided input collection for missing fields
+- `fhir_search_guided`: Search with interactive parameter collection and guidance
+- `patient_identify`: Interactive patient identification with disambiguation for multiple matches
+- `elicit_input`: Request specific user input with healthcare context and validation
+
 ### Validation & Quality
 - `fhir_validate`: Validate FHIR resources against R4 specification
 - `fhir_generate_narrative`: Generate human-readable narratives for resources
@@ -377,6 +383,209 @@ await client.readResource('fhir://r4/terminology')
 
 These resources provide Claude with deep knowledge of FHIR R4 specifications, enabling more accurate and compliant healthcare integrations.
 
+## Interactive Elicitation System
+
+The server includes a sophisticated **elicitation system** that provides interactive user input collection for complex healthcare workflows. This system transforms static FHIR operations into guided, conversational experiences.
+
+### Key Features
+
+#### 🎯 **Context-Aware Prompts**
+- Generates healthcare-appropriate guidance based on FHIR resource type and clinical workflow
+- Adapts messaging for different user types (clinical, administrative, technical)
+- Provides relevant examples and validation patterns for medical data entry
+
+#### 🔍 **Smart Validation**
+- **Healthcare-Specific Patterns**: Birth dates (YYYY-MM-DD), FHIR IDs, gender codes
+- **Data Type Validation**: String, number, boolean, object, and array inputs
+- **Range Validation**: Minimum/maximum values for numeric inputs
+- **Enumeration Validation**: Controlled vocabularies and code systems
+- **Pattern Matching**: Regular expressions for structured data formats
+
+#### 🏥 **Clinical Workflow Integration**
+- **Admission Workflows**: Prompts for admission type, priority, department selection
+- **Discharge Workflows**: Destination, follow-up requirements, medication changes
+- **Patient Identification**: Disambiguation when multiple patients match search criteria
+- **Resource Creation**: Guided collection of required FHIR fields
+
+### Interactive Tools
+
+#### `fhir_create_interactive`
+Creates FHIR resources with step-by-step guidance for missing information:
+
+```javascript
+// Example: Create a patient with guided input
+{
+  "tool": "fhir_create_interactive",
+  "args": {
+    "resourceType": "Patient",
+    "resource": {
+      "resourceType": "Patient"
+      // Missing required fields will trigger prompts
+    }
+  }
+}
+
+// Response: Elicitation request for missing data
+{
+  "requiresInput": true,
+  "elicitation": {
+    "prompt": "Please provide the status for Patient during creation...",
+    "context": "fhir_create - status elicitation",
+    "required": true,
+    "validation": { "type": "string", "enum": ["active", "inactive"] },
+    "examples": ["active", "inactive"]
+  }
+}
+```
+
+#### `fhir_search_guided`
+Provides interactive search parameter collection:
+
+```javascript
+// Example: Search patients with guidance
+{
+  "tool": "fhir_search_guided",
+  "args": {
+    "resourceType": "Patient"
+    // No parameters triggers guidance
+  }
+}
+
+// Response: Search parameter elicitation
+{
+  "requiresInput": true,
+  "elicitation": {
+    "prompt": "To continue with this healthcare workflow, please provide...",
+    "examples": [
+      "family=Smith&given=John",
+      "birthdate=1990-01-15",
+      "identifier=MRN12345"
+    ]
+  }
+}
+```
+
+#### `patient_identify`
+Handles patient identification with disambiguation:
+
+```javascript
+// Example: Multiple patients found
+{
+  "tool": "patient_identify",
+  "args": {
+    "searchParams": { "family": "Smith" }
+  }
+}
+
+// Response: Disambiguation request
+{
+  "requiresInput": true,
+  "multipleMatches": 3,
+  "elicitation": {
+    "prompt": "Multiple patient options were found:\n\n1. Smith, John (DOB: 1990-01-01, ID: patient-001)\n2. Smith, Jane (DOB: 1985-05-15, ID: patient-002)\n3. Smith, Robert (DOB: 1978-11-30, ID: patient-003)\n\nPlease respond with the number of your choice (1-3).",
+    "validation": { "type": "number", "minimum": 1, "maximum": 3 }
+  }
+}
+```
+
+#### `elicit_input`
+Direct input requests with healthcare context:
+
+```javascript
+// Example: Custom input with validation
+{
+  "tool": "elicit_input",
+  "args": {
+    "prompt": "Please enter the patient's medical record number",
+    "validation": {
+      "type": "string",
+      "pattern": "^MRN\\d+$"
+    },
+    "examples": ["MRN12345", "MRN67890"]
+  }
+}
+```
+
+### Validation Capabilities
+
+The elicitation system provides comprehensive validation for healthcare data:
+
+#### **Pattern Validation**
+```javascript
+// FHIR ID validation
+{ "type": "string", "pattern": "^[A-Za-z0-9\\-\\.]{1,64}$" }
+
+// Birth date validation
+{ "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+
+// Medical record number validation
+{ "type": "string", "pattern": "^MRN\\d+$" }
+```
+
+#### **Enumeration Validation**
+```javascript
+// Gender codes
+{ "type": "string", "enum": ["male", "female", "other", "unknown"] }
+
+// Observation status
+{ "type": "string", "enum": ["final", "preliminary", "amended", "cancelled"] }
+```
+
+#### **Range Validation**
+```javascript
+// Age validation
+{ "type": "number", "minimum": 0, "maximum": 150 }
+
+// Priority selection
+{ "type": "number", "minimum": 1, "maximum": 5 }
+```
+
+### Resource Disambiguation
+
+The system intelligently formats healthcare resources for disambiguation:
+
+#### **Patient Formatting**
+```
+1. Smith, John (DOB: 1990-01-01, ID: patient-001)
+2. Johnson, Mary (DOB: 1985-05-15, ID: patient-002)
+```
+
+#### **Practitioner Formatting**
+```
+1. Dr. Jane Smith (Cardiology)
+2. Dr. Robert Johnson (Emergency Medicine)
+```
+
+### Error Handling & User Experience
+
+#### **Validation Errors**
+- Clear, actionable error messages
+- Specific format requirements
+- Examples of correct input
+
+#### **Required Field Handling**
+```
+"This field is required and cannot be empty."
+"Value must be a valid number."
+"Value does not match the required format."
+```
+
+#### **Healthcare Context**
+- Clinical terminology in prompts
+- Workflow-appropriate guidance
+- User-type specific messaging
+
+### Benefits for Healthcare Workflows
+
+✅ **Reduced Errors**: Comprehensive validation prevents invalid healthcare data entry
+✅ **Improved UX**: Guided workflows make complex FHIR operations accessible
+✅ **Clinical Context**: Healthcare-appropriate prompts and validation patterns
+✅ **Workflow Integration**: Seamless integration with admission, discharge, and care workflows
+✅ **Multi-User Support**: Tailored experiences for clinicians, administrators, and technical users
+✅ **Comprehensive Testing**: 415+ test cases ensure robust validation and error handling
+
+The elicitation system transforms static FHIR operations into intelligent, conversational experiences that guide users through complex healthcare data collection with clinical accuracy and regulatory compliance.
+
 ## Example Usage with Claude Desktop
 
 Add to your Claude Desktop configuration:
@@ -400,7 +609,7 @@ Add to your Claude Desktop configuration:
 
 ### Project Status
 
-**Current Version:** 1.6.0
+**Current Version:** 1.7.0
 **FHIR Version:** R4
 **Node.js:** 16+ required
 **TypeScript:** 5.0+
@@ -408,17 +617,21 @@ Add to your Claude Desktop configuration:
 ### Features & Capabilities
 
 ✅ **Core FHIR Operations** - Full CRUD operations with validation
+✅ **Interactive Elicitation System** - Guided user input collection with healthcare context and validation
 ✅ **Resource Validation** - Complete R4 specification compliance checking
 ✅ **Narrative Generation** - Human-readable resource descriptions
 ✅ **Comprehensive FHIR Documentation** - Built-in R4 specification, resource types, data types, search, validation, and terminology guidance
 ✅ **MCP Resource Templates** - 7 parameterized template categories for discoverable, dynamic resource access
 ✅ **MCP Roots** - 5 specialized file system roots for FHIR development assets (Implementation Guides, test data, configuration, terminology, profiles)
 ✅ **Intelligent Prompts** - 50+ contextual AI prompts for healthcare workflows
+✅ **Patient Disambiguation** - Smart handling of multiple patient matches with clinical context
+✅ **Healthcare Validation** - FHIR-specific patterns for IDs, dates, codes, and clinical data
 ✅ **Security Framework** - HIPAA-compliant data handling and audit logging
 ✅ **Multi-Server Support** - Works with any FHIR R4 compatible server
 ✅ **MCP Integration** - Full Model Context Protocol compatibility with Inspector support
 ✅ **TypeScript** - Complete type safety and IntelliSense support
-✅ **Modular Architecture** - Clean separation with dedicated providers for prompts, documentation, and templates
+✅ **Comprehensive Testing** - 415+ test cases with full validation coverage
+✅ **Modular Architecture** - Clean separation with dedicated providers for prompts, documentation, templates, and elicitation
 
 ### Development Scripts
 
@@ -446,12 +659,17 @@ See [Claude Setup Guide](.github/CLAUDE_SETUP.md) for configuration details.
 ### Testing & Quality Assurance
 
 ```bash
-npm run lint            # Code style and quality checks
-npm run build           # TypeScript compilation validation
-npm run inspect         # Interactive MCP testing with inspector
+npm test               # Run comprehensive Jest test suite (415+ tests)
+npm run lint           # Code style and quality checks
+npm run build          # TypeScript compilation validation
+npm run inspect        # Interactive MCP testing with inspector
 ```
 
 The project includes:
+- **Comprehensive Test Suite**: 415+ passing tests with Jest framework
+- **Unit Test Coverage**: All core functionality including elicitation system
+- **Healthcare Validation Testing**: FHIR-specific patterns and edge cases
+- **Integration Testing**: MCP tool handlers and workflow validation
 - **ESLint Configuration**: Comprehensive TypeScript rules
 - **Semantic Versioning**: Automated releases with conventional commits
 - **Pre-commit Hooks**: Code quality validation before commits
