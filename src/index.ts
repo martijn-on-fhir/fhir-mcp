@@ -5,8 +5,8 @@ import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
     CallToolRequestSchema, ListResourcesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import {loadConfigWithFile as loadConfig} from './config-loader.js';
-import {ServerConfig} from './config.js';
+import {loadConfigWithFile as loadConfig} from './lib/config-loader.js';
+import {ServerConfig} from './lib/config.js';
 import {Axios} from 'axios';
 
 /**
@@ -208,6 +208,14 @@ class FHIRMCPServer {
                             },
                             required: ['message'],
                         },
+                    },
+                    {
+                        name: 'ping',
+                        description: 'Health check ping that returns server status',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {},
+                        },
                     }
                 ],
             };
@@ -250,6 +258,9 @@ class FHIRMCPServer {
                             level?: string;
                             context?: any
                         });
+
+                    case 'ping':
+                        return await this._ping();
 
                     default:
                         throw new Error(`Unknown tool: ${name}`);
@@ -540,6 +551,21 @@ class FHIRMCPServer {
                 {
                     type: 'text',
                     text: `Feedback logged: ${message}`,
+                },
+            ],
+        };
+    }
+
+    /**
+     * Health check ping that returns server status
+     * @returns Promise resolving to status OK wrapped in MCP content format
+     */
+    private async _ping(): Promise<any> {
+        return {
+            content: [
+                {
+                    type: 'text',
+                    text: JSON.stringify({status: "OK"}, null, 2),
                 },
             ],
         };
