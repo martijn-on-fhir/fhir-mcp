@@ -130,6 +130,80 @@ export default [
         },
     },
     {
+        files: ['**/*.test.ts', '**/*.spec.ts', '**/__tests__/**/*.ts'],
+        languageOptions: {
+            parser: tsparser,
+            parserOptions: {
+                ecmaVersion: 2022,
+                sourceType: 'module',
+                project: './tsconfig.json',
+            },
+            globals: {
+                console: 'readonly',
+                process: 'readonly',
+                Buffer: 'readonly',
+                __dirname: 'readonly',
+                __filename: 'readonly',
+                // Jest globals
+                describe: 'readonly',
+                it: 'readonly',
+                test: 'readonly',
+                expect: 'readonly',
+                beforeEach: 'readonly',
+                afterEach: 'readonly',
+                beforeAll: 'readonly',
+                afterAll: 'readonly',
+                jest: 'readonly',
+                // Node.js globals for tests
+                require: 'readonly',
+                module: 'readonly',
+                NodeJS: 'readonly',
+            },
+        },
+        plugins: {
+            '@typescript-eslint': tseslint,
+        },
+        rules: {
+            // Same TypeScript rules as main config but more relaxed for tests
+            '@typescript-eslint/no-unused-vars': ['error', {argsIgnorePattern: '^_'}],
+            '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/explicit-module-boundary-types': 'off',
+            '@typescript-eslint/no-inferrable-types': 'error',
+            '@typescript-eslint/strict-boolean-expressions': 0,
+            '@typescript-eslint/explicit-function-return-type': 0, // Relaxed for tests
+            '@typescript-eslint/restrict-template-expressions': 0,
+            '@typescript-eslint/no-invalid-void-type': 0,
+            '@typescript-eslint/dot-notation': 0,
+            '@typescript-eslint/return-await': 0,
+            '@typescript-eslint/space-before-function-paren': 0,
+
+            // General code quality rules
+            'no-console': 'off',
+            'no-unused-vars': 'off',
+            'prefer-const': 'error',
+            'no-var': 'error',
+
+            // Style rules - more relaxed for tests
+            'indent': ['error', 4],
+            'quotes': ['error', 'single'],
+            'semi': ['error', 'always'],
+            'comma-dangle': ['error', 'always-multiline'],
+            'array-bracket-spacing': ['error', 'never'],
+            'no-trailing-spaces': [2, {'skipBlankLines': true}],
+            'no-multiple-empty-lines': [2, {
+                'max': 2, // More relaxed for tests
+                'maxEOF': 1
+            }],
+
+            // More relaxed naming for tests
+            'camelcase': 'off',
+            'padded-blocks': 'off',
+            'object-curly-spacing': 'off',
+            'padding-line-between-statements': 'off',
+            '@typescript-eslint/naming-convention': 'off',
+        },
+    },
+    {
         ignores: [
             'dist/**',
             'node_modules/**',
