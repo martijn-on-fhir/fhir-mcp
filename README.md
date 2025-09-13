@@ -80,3 +80,22 @@ Add to your Claude Desktop configuration:
   }
 }
 ```
+
+## Development
+
+### Code Quality & Review
+
+This project uses automated code review powered by Claude AI:
+
+- **Automatic Reviews**: Every pull request gets analyzed for code quality, FHIR compliance, and security
+- **Interactive Reviews**: Mention `@claude` in PR comments for specific feedback
+- **Security Focus**: Specialized healthcare security analysis including PHI handling and HIPAA considerations
+
+See [Claude Setup Guide](.github/CLAUDE_SETUP.md) for configuration details.
+
+### Linting
+
+```bash
+npm run lint        # Check code style and quality
+npm run lint:fix    # Auto-fix formatting issues
+```
