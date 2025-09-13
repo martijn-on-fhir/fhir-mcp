@@ -65,6 +65,7 @@ export class ResourceTemplateManager {
      */
     public validateParameters(templateUri: string, parameters: Record<string, string>): { valid: boolean; errors: string[] } {
         const template = this.templates.find(t => t.uri === templateUri);
+
         if (!template) {
             return { valid: false, errors: [`Template not found: ${templateUri}`] };
         }
@@ -106,9 +107,9 @@ export class ResourceTemplateManager {
                         description: 'Type of FHIR R4 documentation to retrieve',
                         type: 'string',
                         enum: ['specification', 'resources', 'datatypes', 'search', 'validation', 'terminology'],
-                        required: true
-                    }
-                }
+                        required: true,
+                    },
+                },
             },
 
             // FHIR Prompt Templates
@@ -122,14 +123,14 @@ export class ResourceTemplateManager {
                         description: 'Prompt category (clinical, security, technical, workflow)',
                         type: 'string',
                         enum: ['clinical', 'security', 'technical', 'workflow'],
-                        required: true
+                        required: true,
                     },
                     promptId: {
                         description: 'Specific prompt identifier within the category',
                         type: 'string',
-                        required: true
-                    }
-                }
+                        required: true,
+                    },
+                },
             },
 
             // Resource Type Specific Prompts
@@ -147,11 +148,11 @@ export class ResourceTemplateManager {
                             'Observation', 'Condition', 'Procedure', 'MedicationRequest',
                             'Encounter', 'DiagnosticReport', 'Specimen', 'AllergyIntolerance',
                             'CarePlan', 'Immunization', 'Claim', 'Coverage', 'Account',
-                            'Appointment', 'Schedule', 'Task', 'Slot'
+                            'Appointment', 'Schedule', 'Task', 'Slot',
                         ],
-                        required: true
-                    }
-                }
+                        required: true,
+                    },
+                },
             },
 
             // Workflow-Specific Context Templates
@@ -165,15 +166,15 @@ export class ResourceTemplateManager {
                         description: 'Healthcare workflow type',
                         type: 'string',
                         enum: ['admission', 'discharge', 'medication-review', 'care-planning', 'billing', 'scheduling'],
-                        required: true
+                        required: true,
                     },
                     userType: {
                         description: 'Type of healthcare professional',
                         type: 'string',
                         enum: ['clinical', 'administrative', 'technical', 'billing'],
-                        default: 'clinical'
-                    }
-                }
+                        default: 'clinical',
+                    },
+                },
             },
 
             // Configuration Templates
@@ -187,9 +188,9 @@ export class ResourceTemplateManager {
                         description: 'Type of configuration to retrieve',
                         type: 'string',
                         enum: ['server', 'fhir', 'security', 'prompts', 'documentation'],
-                        required: true
-                    }
-                }
+                        required: true,
+                    },
+                },
             },
 
             // Validation Templates
@@ -202,15 +203,15 @@ export class ResourceTemplateManager {
                     resourceType: {
                         description: 'FHIR resource type to validate',
                         type: 'string',
-                        required: true
+                        required: true,
                     },
                     level: {
                         description: 'Validation level',
                         type: 'string',
                         enum: ['structure', 'cardinality', 'terminology', 'profile', 'invariants'],
-                        default: 'structure'
-                    }
-                }
+                        default: 'structure',
+                    },
+                },
             },
 
             // Search Pattern Templates
@@ -223,10 +224,10 @@ export class ResourceTemplateManager {
                     resourceType: {
                         description: 'FHIR resource type for search examples',
                         type: 'string',
-                        required: true
-                    }
-                }
-            }
+                        required: true,
+                    },
+                },
+            },
         ];
     }
 }

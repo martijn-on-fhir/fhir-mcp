@@ -212,6 +212,88 @@ const contextContent = await client.readResource('context://fhir/admission/clini
 
 The template system is powered by the `ResourceTemplateManager` class, providing a structured approach to resource discovery and access.
 
+## MCP Roots
+
+The server implements comprehensive **MCP Roots** functionality for file system access patterns:
+
+### Available Root Systems
+
+The FHIR MCP server provides 5 specialized root systems for healthcare development:
+
+#### 1. **FHIR Implementation Guides**
+```
+file://fhir-ig
+```
+- **Purpose**: Access to FHIR Implementation Guide files and profiles
+- **Usage**: Custom profiles, extensions, and regional FHIR specifications
+- **Examples**: US Core, UK Core, AU Base, custom hospital profiles
+
+#### 2. **FHIR Test Data Resources**
+```
+file://fhir-test-data
+```
+- **Purpose**: Sample FHIR resources for testing and development
+- **Usage**: Test patient data, synthetic clinical records, edge cases
+- **Examples**: Patient bundles, observation sets, medication orders
+
+#### 3. **FHIR Server Configuration**
+```
+file://fhir-config
+```
+- **Purpose**: Server configuration files and environment settings
+- **Usage**: Endpoint configs, authentication settings, feature flags
+- **Examples**: Server capabilities, security policies, validation rules
+
+#### 4. **FHIR Terminology Resources**
+```
+file://fhir-terminology
+```
+- **Purpose**: Code systems, value sets, and terminology files
+- **Usage**: Custom terminologies, local code systems, translations
+- **Examples**: SNOMED CT subsets, LOINC mappings, ICD-10 codes
+
+#### 5. **FHIR Custom Profiles**
+```
+file://fhir-profiles
+```
+- **Purpose**: Organization-specific FHIR resource profiles
+- **Usage**: Constrained resource definitions, validation profiles
+- **Examples**: Patient admission profiles, lab result constraints
+
+### Root Benefits for Development
+
+✅ **File System Integration**: Direct access to FHIR development assets
+✅ **Development Workflow**: Seamless integration with MCP-enabled tools
+✅ **Version Control**: Easy management of FHIR artifacts in repositories
+✅ **Collaboration**: Shared access to FHIR resources across teams
+✅ **Testing Support**: Organized test data and validation resources
+✅ **Configuration Management**: Centralized server and profile configuration
+
+### Using Roots
+
+Roots are automatically discovered by MCP clients and provide file system access:
+
+```javascript
+// List all available roots
+const roots = await client.listRoots();
+
+// Access FHIR Implementation Guides
+// Files under file://fhir-ig/ become accessible
+
+// Access test data resources
+// Files under file://fhir-test-data/ become accessible
+
+// Access configuration files
+// Files under file://fhir-config/ become accessible
+```
+
+The root system enables Claude and other AI assistants to directly access, read, modify, and manage FHIR development files, making it easier to:
+- Review and update FHIR profiles
+- Access test data for validation
+- Modify server configurations
+- Work with custom terminologies
+- Collaborate on Implementation Guides
+
 ## FHIR Intelligent Prompts System
 
 The server includes a comprehensive prompt management system providing contextual AI assistance for FHIR operations:
@@ -330,6 +412,7 @@ Add to your Claude Desktop configuration:
 ✅ **Narrative Generation** - Human-readable resource descriptions
 ✅ **Comprehensive FHIR Documentation** - Built-in R4 specification, resource types, data types, search, validation, and terminology guidance
 ✅ **MCP Resource Templates** - 7 parameterized template categories for discoverable, dynamic resource access
+✅ **MCP Roots** - 5 specialized file system roots for FHIR development assets (Implementation Guides, test data, configuration, terminology, profiles)
 ✅ **Intelligent Prompts** - 50+ contextual AI prompts for healthcare workflows
 ✅ **Security Framework** - HIPAA-compliant data handling and audit logging
 ✅ **Multi-Server Support** - Works with any FHIR R4 compatible server

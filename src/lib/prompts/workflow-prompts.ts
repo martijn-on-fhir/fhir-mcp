@@ -316,10 +316,12 @@ export class WorkflowPrompts implements PromptProvider {
     private interpolatePrompt(template: string, args: PromptArguments): string {
         let result = template;
 
-        for (const [key, value] of Object.entries(args)) {
-            const placeholder = `{{${key}}}`;
-            const replacement = typeof value === 'string' ? value : JSON.stringify(value);
-            result = result.replace(new RegExp(placeholder, 'g'), replacement);
+        if (args && typeof args === 'object') {
+            for (const [key, value] of Object.entries(args)) {
+                const placeholder = `{{${key}}}`;
+                const replacement = typeof value === 'string' ? value : JSON.stringify(value);
+                result = result.replace(new RegExp(placeholder, 'g'), replacement);
+            }
         }
 
         return result.trim();

@@ -10,7 +10,13 @@
       "Bash(npx webpack:*)",
       "Bash(npm run build:*)",
       "Bash(npm install:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(npm test)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(node:*)",
+      "Bash(npx jest:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": [],
     "ask": []

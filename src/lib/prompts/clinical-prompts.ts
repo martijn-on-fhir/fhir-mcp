@@ -215,7 +215,7 @@ For FHIR resources, ensure they support:
 - Care recommendations and next steps
 - Integration with existing clinical processes
 - Quality metrics and outcome measures`,
-                tags: ['user-context', 'clinical-user'],
+                tags: ['clinical', 'user-context', 'clinical-user'],
                 context: {
                     userType: 'clinical',
                 },
@@ -243,7 +243,7 @@ For FHIR resources, ensure they support:
 - Instructions for self-care and medication management
 - Understanding of test results and their meaning
 - Guidance on when to seek medical attention`,
-                tags: ['user-context', 'patient-user', 'plain-language'],
+                tags: ['clinical', 'user-context', 'patient-user', 'plain-language'],
                 context: {
                     userType: 'patient',
                 },
@@ -272,10 +272,12 @@ For FHIR resources, ensure they support:
     private interpolatePrompt(template: string, args: PromptArguments): string {
         let result = template;
 
-        for (const [key, value] of Object.entries(args)) {
-            const placeholder = `{{${key}}}`;
-            const replacement = typeof value === 'string' ? value : JSON.stringify(value);
-            result = result.replace(new RegExp(placeholder, 'g'), replacement);
+        if (args && typeof args === 'object') {
+            for (const [key, value] of Object.entries(args)) {
+                const placeholder = `{{${key}}}`;
+                const replacement = typeof value === 'string' ? value : JSON.stringify(value);
+                result = result.replace(new RegExp(placeholder, 'g'), replacement);
+            }
         }
 
         return result.trim();
