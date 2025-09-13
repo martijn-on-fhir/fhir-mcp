@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.7.0...v1.8.0) (2025-09-13)
+
+
+### Features
+
+* enhance elicitation system with comprehensive unit test coverage ([14aeb0a](https://github.com/martijn-on-fhir/fhir-mcp/commit/14aeb0a200003d7c20744d8f63d8fb2f158109bf))
+
 # [1.7.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.6.1...v1.7.0) (2025-09-13)
 
 
