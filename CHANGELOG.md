@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.5.1...v1.6.0) (2025-09-13)
+
+
+### Features
+
+* implement comprehensive MCP Resource Templates system ([28715c3](https://github.com/martijn-on-fhir/fhir-mcp/commit/28715c3653075b58ed4b1bf8652451426722e251))
+
 ## [1.5.1](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.5.0...v1.5.1) (2025-09-13)
 
 
