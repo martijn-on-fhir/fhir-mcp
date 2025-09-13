@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.4.0...v1.5.0) (2025-09-13)
+
+
+### Features
+
+* add comprehensive FHIR prompts system and enhanced functionality ([43b2b5c](https://github.com/martijn-on-fhir/fhir-mcp/commit/43b2b5c4d6cc724c41b4b00ab0aac47d7d6207c6))
+
 # [1.4.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.3.0...v1.4.0) (2025-09-13)
 
 
