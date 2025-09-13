@@ -3,7 +3,7 @@
 import {Server} from '@modelcontextprotocol/sdk/server/index.js';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
-    CallToolRequestSchema, ListResourcesRequestSchema, ListResourceTemplatesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema,
+    CallToolRequestSchema, ListResourcesRequestSchema, ListResourceTemplatesRequestSchema, ListRootsRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import {loadConfigWithFile as loadConfig} from './lib/configuration/config-loader.js';
 import {ServerConfig} from './lib/configuration/config.js';
@@ -103,6 +103,9 @@ class FHIRMCPServer {
                 tools: {},
                 resources: {},
                 resourceTemplates: {},
+                roots: {
+                    listChanged: true,
+                },
             },
         },
         );
@@ -532,6 +535,7 @@ class FHIRMCPServer {
                 // For now, we'll handle template URIs by returning template information
                 // In a full implementation, you'd extract parameters from the URI
                 const template = this.templateManager.getTemplate(uri);
+
                 if (template) {
                     return {
                         contents: [{
@@ -542,9 +546,9 @@ class FHIRMCPServer {
                                 name: template.name,
                                 description: template.description,
                                 parameters: template.parameters,
-                                usage: 'Replace {parameterName} with actual values to access resources'
-                            }, null, 2)
-                        }]
+                                usage: 'Replace {parameterName} with actual values to access resources',
+                            }, null, 2),
+                        }],
                     };
                 }
             }
@@ -638,8 +642,35 @@ class FHIRMCPServer {
                     name: template.name,
                     description: template.description,
                     mimeType: template.mimeType,
-                    parameters: template.parameters
-                }))
+                    parameters: template.parameters,
+                })),
+            };
+        });
+
+        this.server.setRequestHandler(ListRootsRequestSchema, async () => {
+            return {
+                roots: [
+                    {
+                        uri: 'file://fhir-ig',
+                        name: 'FHIR Implementation Guides',
+                    },
+                    {
+                        uri: 'file://fhir-test-data',
+                        name: 'FHIR Test Data Resources',
+                    },
+                    {
+                        uri: 'file://fhir-config',
+                        name: 'FHIR Server Configuration',
+                    },
+                    {
+                        uri: 'file://fhir-terminology',
+                        name: 'FHIR Terminology Resources',
+                    },
+                    {
+                        uri: 'file://fhir-profiles',
+                        name: 'FHIR Custom Profiles',
+                    },
+                ],
             };
         });
     }
@@ -655,9 +686,11 @@ class FHIRMCPServer {
 
         if (parts.length === 2) {
             const [category, promptId] = parts;
+
             if (!category || !promptId) {
                 throw new Error(`Invalid prompt URI format: ${uri}`);
             }
+
             const prompts = this.promptManager.getPromptsByTag(category);
             const prompt = prompts.find(p => p.id === promptId);
 
@@ -666,8 +699,8 @@ class FHIRMCPServer {
                     contents: [{
                         uri,
                         mimeType: 'text/plain',
-                        text: prompt.prompt
-                    }]
+                        text: prompt.prompt,
+                    }],
                 };
             }
         }
@@ -677,8 +710,8 @@ class FHIRMCPServer {
             contents: [{
                 uri,
                 mimeType: 'text/plain',
-                text: `Prompt not found for URI: ${uri}`
-            }]
+                text: `Prompt not found for URI: ${uri}`,
+            }],
         };
     }
 
@@ -702,9 +735,9 @@ class FHIRMCPServer {
                     text: JSON.stringify({
                         workflow,
                         userType,
-                        context: contextPrompt
-                    }, null, 2)
-                }]
+                        context: contextPrompt,
+                    }, null, 2),
+                }],
             };
         }
 
@@ -720,45 +753,45 @@ class FHIRMCPServer {
         const configType = uri.replace('config://', '');
 
         switch (configType) {
-            case 'server':
-                return {
-                    contents: [{
-                        uri,
-                        mimeType: 'application/json',
-                        text: JSON.stringify({
-                            url: this.config.url,
-                            timeout: this.config.timeout,
-                            hasApiKey: !!this.config.apiKey,
-                        }, null, 2)
-                    }]
-                };
-            case 'fhir':
-                return {
-                    contents: [{
-                        uri,
-                        mimeType: 'application/json',
-                        text: JSON.stringify({
-                            version: 'R4',
-                            baseUrl: this.config.url,
-                            timeout: this.config.timeout,
-                            capabilities: 'CRUD operations, validation, narrative generation'
-                        }, null, 2)
-                    }]
-                };
-            case 'prompts':
-                return {
-                    contents: [{
-                        uri,
-                        mimeType: 'application/json',
-                        text: JSON.stringify({
-                            totalPrompts: this.promptManager.getPrompts().length,
-                            categories: ['clinical', 'security', 'technical', 'workflow'],
-                            features: ['parameter substitution', 'context awareness', 'multi-user support']
-                        }, null, 2)
-                    }]
-                };
-            default:
-                throw new Error(`Unknown config type: ${configType}`);
+        case 'server':
+            return {
+                contents: [{
+                    uri,
+                    mimeType: 'application/json',
+                    text: JSON.stringify({
+                        url: this.config.url,
+                        timeout: this.config.timeout,
+                        hasApiKey: !!this.config.apiKey,
+                    }, null, 2),
+                }],
+            };
+        case 'fhir':
+            return {
+                contents: [{
+                    uri,
+                    mimeType: 'application/json',
+                    text: JSON.stringify({
+                        version: 'R4',
+                        baseUrl: this.config.url,
+                        timeout: this.config.timeout,
+                        capabilities: 'CRUD operations, validation, narrative generation',
+                    }, null, 2),
+                }],
+            };
+        case 'prompts':
+            return {
+                contents: [{
+                    uri,
+                    mimeType: 'application/json',
+                    text: JSON.stringify({
+                        totalPrompts: this.promptManager.getPrompts().length,
+                        categories: ['clinical', 'security', 'technical', 'workflow'],
+                        features: ['parameter substitution', 'context awareness', 'multi-user support'],
+                    }, null, 2),
+                }],
+            };
+        default:
+            throw new Error(`Unknown config type: ${configType}`);
         }
     }
 
@@ -773,6 +806,7 @@ class FHIRMCPServer {
 
         if (parts.length === 2) {
             const [resourceType, level] = parts;
+
             if (!resourceType || !level) {
                 throw new Error(`Invalid validation URI format: ${uri}`);
             }
@@ -795,8 +829,8 @@ Common validation points:
 - Business rule invariants
 - Profile-specific requirements
 
-For detailed validation rules, see: fhir://r4/validation`
-                }]
+For detailed validation rules, see: fhir://r4/validation`,
+                }],
             };
         }
 
@@ -814,6 +848,7 @@ For detailed validation rules, see: fhir://r4/validation`
 
         if (parts.length === 2) {
             const [resourceType] = parts;
+
             if (!resourceType) {
                 throw new Error(`Invalid examples URI format: ${uri}`);
             }
@@ -837,8 +872,8 @@ GET /${resourceType}?_include=${resourceType}:*
 GET /${resourceType}?_summary=count
 GET /${resourceType}?_elements=id,meta,text
 
-For complete search documentation, see: fhir://r4/search`
-                }]
+For complete search documentation, see: fhir://r4/search`,
+                }],
             };
         }
 
@@ -852,32 +887,32 @@ For complete search documentation, see: fhir://r4/search`
      */
     private _generateResourceSpecificExamples(resourceType: string): string {
         switch (resourceType) {
-            case 'Patient':
-                return `GET /Patient?name=John
+        case 'Patient':
+            return `GET /Patient?name=John
 GET /Patient?birthdate=1990-01-01
 GET /Patient?identifier=12345
 GET /Patient?family=Smith&given=John`;
 
-            case 'Observation':
-                return `GET /Observation?subject=Patient/123
+        case 'Observation':
+            return `GET /Observation?subject=Patient/123
 GET /Observation?code=http://loinc.org|8480-6
 GET /Observation?date=ge2021-01-01
 GET /Observation?value-quantity=120`;
 
-            case 'Condition':
-                return `GET /Condition?subject=Patient/123
+        case 'Condition':
+            return `GET /Condition?subject=Patient/123
 GET /Condition?clinical-status=active
 GET /Condition?code=http://snomed.info/sct|38341003
 GET /Condition?onset-date=ge2020-01-01`;
 
-            case 'MedicationRequest':
-                return `GET /MedicationRequest?subject=Patient/123
+        case 'MedicationRequest':
+            return `GET /MedicationRequest?subject=Patient/123
 GET /MedicationRequest?status=active
 GET /MedicationRequest?medication=Medication/456
 GET /MedicationRequest?intent=order`;
 
-            default:
-                return `GET /${resourceType}?subject=Patient/123
+        default:
+            return `GET /${resourceType}?subject=Patient/123
 GET /${resourceType}?status=active
 GET /${resourceType}?date=ge2021-01-01`;
         }

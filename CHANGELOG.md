@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.6.1...v1.7.0) (2025-09-13)
+
+
+### Features
+
+* add comprehensive prompt management system and resource templates ([c650b7e](https://github.com/martijn-on-fhir/fhir-mcp/commit/c650b7ede883200a79f1b2f8a1066823ce783e58))
+
 ## [1.6.1](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.6.0...v1.6.1) (2025-09-13)
 
 
