@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.0.0...v1.1.0) (2025-09-12)
+
+
+### Features
+
+* improve error handling and configuration management ([731081c](https://github.com/martijn-on-fhir/fhir-mcp/commit/731081c3c8d0e198b08318b0111d4c938dbd1617))
+
 # 1.0.0 (2025-09-12)
 
 
