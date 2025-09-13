@@ -1,6 +1,6 @@
 {
   "name": "fhir-mcp-server",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Model Context Protocol server for FHIR R4 with validation, narrative generation, and comprehensive resource management",
   "type": "module",
   "main": "dist/index.js",
@@ -16,8 +16,7 @@
     "inspect-debug": "npx @modelcontextprotocol/inspector node --inspect dist/index.js http://localhost:3000",
     "inspect-ts-debug": "npx @modelcontextprotocol/inspector tsx --inspect src/index.ts http://localhost:3000",
     "dev": "tsx src/index.ts",
-    "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix",
+    "lint": "eslint src/**/*.ts --fix",
     "semantic-release": "semantic-release",
     "release": "npm run build && semantic-release",
     "release:dry-run": "npm run build && semantic-release --dry-run",

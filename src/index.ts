@@ -8,6 +8,7 @@ import {
 import { loadConfigWithFile as loadConfig } from './lib/configuration/config-loader.js';
 import { ServerConfig } from './lib/configuration/config.js';
 import { Narrative, NarrativeStyle } from './lib/narrative/narrative.js';
+import { FHIRPromptManager } from './lib/prompts/prompt-manager.js';
 import { Axios } from 'axios';
 
 /**
@@ -22,9 +23,12 @@ class FHIRMCPServer {
 
     private instance!: Axios;
 
+    private promptManager: FHIRPromptManager;
+
     constructor() {
 
         this.config = loadConfig();
+        this.promptManager = new FHIRPromptManager();
 
         this.server = new Server({
             name: 'fhir-mcp-server',
@@ -261,6 +265,63 @@ class FHIRMCPServer {
                             properties: {},
                         },
                     },
+                    {
+                        name: 'fhir_list_prompts',
+                        description: 'List all available FHIR R4 expert prompts for thinking in healthcare context',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                tag: {
+                                    type: 'string',
+                                    description: 'Optional: Filter prompts by tag (e.g., clinical, security, technical, workflow)',
+                                },
+                                resourceType: {
+                                    type: 'string',
+                                    description: 'Optional: Filter prompts by FHIR resource type (e.g., Patient, Observation)',
+                                },
+                            },
+                        },
+                    },
+                    {
+                        name: 'fhir_get_prompt',
+                        description: 'Get a specific FHIR expert prompt with contextual healthcare guidance',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                id: {
+                                    type: 'string',
+                                    description: 'Prompt ID (e.g., fhir-clinical-expert, fhir-security-expert, phi-protection)',
+                                },
+                                args: {
+                                    type: 'object',
+                                    description: 'Optional: Template arguments for prompt interpolation',
+                                },
+                            },
+                            required: ['id'],
+                        },
+                    },
+                    {
+                        name: 'fhir_context_prompt',
+                        description: 'Get contextual FHIR prompt combining clinical expertise with specific resource and workflow context',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                resourceType: {
+                                    type: 'string',
+                                    description: 'Optional: FHIR resource type for specialized guidance',
+                                },
+                                workflow: {
+                                    type: 'string',
+                                    description: 'Optional: Clinical workflow context (e.g., admission, discharge, medication-management)',
+                                },
+                                userType: {
+                                    type: 'string',
+                                    enum: ['clinical', 'technical', 'executive', 'patient'],
+                                    description: 'User type for tailored communication (defaults to clinical)',
+                                },
+                            },
+                        },
+                    },
                 ],
             };
         });
@@ -312,6 +373,15 @@ class FHIRMCPServer {
                 case 'ping':
                     return await this._ping();
 
+                case 'fhir_list_prompts':
+                    return await this._listPrompts(args as { tag?: string; resourceType?: string });
+
+                case 'fhir_get_prompt':
+                    return await this._getPrompt(args as { id: string; args?: Record<string, any> });
+
+                case 'fhir_context_prompt':
+                    return await this._getContextPrompt(args as { resourceType?: string; workflow?: string; userType?: string });
+
                 default:
                     throw new Error(`Unknown tool: ${name}`);
                 }
@@ -329,6 +399,12 @@ class FHIRMCPServer {
         });
 
         this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
+            const promptResources = this.promptManager.listAvailablePrompts().map(prompt => ({
+                uri: `prompt://fhir/${prompt.id}`,
+                mimeType: 'text/plain',
+                name: prompt.name,
+                description: prompt.description,
+            }));
 
             return {
                 resources: [
@@ -338,6 +414,13 @@ class FHIRMCPServer {
                         name: 'Server Configuration',
                         description: 'Current server configuration including FHIR URL',
                     },
+                    {
+                        uri: 'prompts://fhir/all',
+                        mimeType: 'application/json',
+                        name: 'All FHIR Prompts',
+                        description: 'Complete list of available FHIR R4 expert prompts',
+                    },
+                    ...promptResources,
                 ],
             };
         });
@@ -361,6 +444,37 @@ class FHIRMCPServer {
                                 null,
                                 2,
                             ),
+                        },
+                    ],
+                };
+            }
+
+            if (uri === 'prompts://fhir/all') {
+                return {
+                    contents: [
+                        {
+                            uri: 'prompts://fhir/all',
+                            mimeType: 'application/json',
+                            text: JSON.stringify(this.promptManager.listAvailablePrompts(), null, 2),
+                        },
+                    ],
+                };
+            }
+
+            if (uri.startsWith('prompt://fhir/')) {
+                const promptId = uri.replace('prompt://fhir/', '');
+                const prompt = this.promptManager.getPrompt(promptId);
+                
+                if (!prompt) {
+                    throw new Error(`Prompt not found: ${promptId}`);
+                }
+
+                return {
+                    contents: [
+                        {
+                            uri,
+                            mimeType: 'text/plain',
+                            text: prompt.prompt,
                         },
                     ],
                 };
@@ -692,6 +806,114 @@ class FHIRMCPServer {
                 },
             ],
         };
+    }
+
+    /**
+     * Lists available FHIR prompts with optional filtering
+     * @param args Object containing optional tag and resourceType filters
+     * @returns Promise resolving to list of prompts wrapped in MCP content format
+     */
+    private async _listPrompts(args: { tag?: string; resourceType?: string }): Promise<object> {
+        const { tag, resourceType } = args;
+
+        let prompts = this.promptManager.listAvailablePrompts();
+
+        if (tag) {
+            prompts = prompts.filter(prompt => prompt.tags.includes(tag));
+        }
+
+        if (resourceType) {
+            const resourcePrompts = this.promptManager.getPromptsByResourceType(resourceType);
+            const resourcePromptIds = resourcePrompts.map(p => p.id);
+            prompts = prompts.filter(prompt => resourcePromptIds.includes(prompt.id));
+        }
+
+        return {
+            content: [
+                {
+                    type: 'text',
+                    text: JSON.stringify(prompts, null, 2),
+                },
+            ],
+        };
+    }
+
+    /**
+     * Gets a specific FHIR prompt by ID with optional template interpolation
+     * @param args Object containing prompt ID and optional template arguments
+     * @returns Promise resolving to prompt content wrapped in MCP content format
+     */
+    private async _getPrompt(args: { id: string; args?: Record<string, any> }): Promise<object> {
+        const { id, args: templateArgs = {} } = args;
+
+        try {
+            const promptText = this.promptManager.generatePrompt(id, templateArgs);
+            const promptInfo = this.promptManager.getPrompt(id);
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify({
+                            id,
+                            name: promptInfo?.name,
+                            description: promptInfo?.description,
+                            tags: promptInfo?.tags,
+                            prompt: promptText,
+                        }, null, 2),
+                    },
+                ],
+            };
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+                    },
+                ],
+                isError: true,
+            };
+        }
+    }
+
+    /**
+     * Gets contextual FHIR prompt combining multiple expertise areas
+     * @param args Object containing optional resourceType, workflow, and userType
+     * @returns Promise resolving to contextual prompt wrapped in MCP content format
+     */
+    private async _getContextPrompt(args: { resourceType?: string; workflow?: string; userType?: string }): Promise<object> {
+        const { resourceType, workflow, userType = 'clinical' } = args;
+
+        try {
+            const contextualPrompt = this.promptManager.getClinicalContextPrompt(resourceType, workflow, userType);
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify({
+                            context: {
+                                resourceType,
+                                workflow,
+                                userType,
+                            },
+                            prompt: contextualPrompt,
+                        }, null, 2),
+                    },
+                ],
+            };
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+                    },
+                ],
+                isError: true,
+            };
+        }
     }
 
     /**
