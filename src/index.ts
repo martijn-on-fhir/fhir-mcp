@@ -11,6 +11,7 @@ import {Narrative, NarrativeStyle} from './lib/narrative/narrative.js';
 import {FHIRPromptManager} from './lib/prompts/prompt-manager.js';
 import {FHIRDocumentationProvider} from './lib/documentation/fhir-documentation-provider.js';
 import {ResourceTemplateManager} from './lib/resources/resource-template-manager.js';
+import {ElicitationToolHandlers} from './lib/elicitation/elicitation-tool-handlers.js';
 import {Axios} from 'axios';
 
 /**
@@ -87,12 +88,23 @@ class FHIRMCPServer {
      */
     private templateManager: ResourceTemplateManager;
 
+    /**
+     * An instance of `ElicitationToolHandlers` responsible for managing interactive
+     * user input requests during FHIR operations.
+     *
+     * This handler enables the server to request missing information from users
+     * during complex healthcare workflows, providing context-aware prompts and
+     * validation for FHIR resource creation and manipulation.
+     */
+    private elicitationHandlers: ElicitationToolHandlers;
+
     constructor() {
 
         this.config = loadConfig();
         this.promptManager = new FHIRPromptManager();
         this.documentationProvider = new FHIRDocumentationProvider();
         this.templateManager = new ResourceTemplateManager();
+        this.elicitationHandlers = new ElicitationToolHandlers(this.promptManager);
 
         this.server = new Server({
             name: 'fhir-mcp-server',
@@ -412,6 +424,111 @@ class FHIRMCPServer {
                             },
                         },
                     },
+                    {
+                        name: 'fhir_create_interactive',
+                        description: 'Create FHIR resources with interactive guidance - asks for missing information when needed',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                resourceType: {
+                                    type: 'string',
+                                    description: 'FHIR resource type (e.g., Patient, Observation)',
+                                },
+                                resource: {
+                                    type: 'object',
+                                    description: 'Optional: Partial or complete FHIR resource. If missing fields, system will prompt for them.',
+                                },
+                                interactive: {
+                                    type: 'boolean',
+                                    description: 'Enable interactive mode for missing field collection (defaults to true)',
+                                },
+                            },
+                            required: ['resourceType'],
+                        },
+                    },
+                    {
+                        name: 'fhir_search_guided',
+                        description: 'Search FHIR resources with guided parameter collection - helps build search queries interactively',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                resourceType: {
+                                    type: 'string',
+                                    description: 'FHIR resource type to search',
+                                },
+                                parameters: {
+                                    type: 'object',
+                                    description: 'Optional: Search parameters. If insufficient, system will guide parameter collection.',
+                                },
+                                interactive: {
+                                    type: 'boolean',
+                                    description: 'Enable guided search parameter collection (defaults to true)',
+                                },
+                            },
+                            required: ['resourceType'],
+                        },
+                    },
+                    {
+                        name: 'patient_identify',
+                        description: 'Interactive patient identification with disambiguation support - handles multiple matches',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                searchParams: {
+                                    type: 'object',
+                                    description: 'Optional: Initial search parameters (name, birthdate, etc.). If missing, will prompt.',
+                                },
+                                allowMultiple: {
+                                    type: 'boolean',
+                                    description: 'Whether to allow multiple patient matches or force disambiguation (defaults to false)',
+                                },
+                                interactive: {
+                                    type: 'boolean',
+                                    description: 'Enable interactive disambiguation (defaults to true)',
+                                },
+                            },
+                        },
+                    },
+                    {
+                        name: 'elicit_input',
+                        description: 'Request specific input from user with healthcare context and validation',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                prompt: {
+                                    type: 'string',
+                                    description: 'The prompt to show to the user',
+                                },
+                                context: {
+                                    type: 'object',
+                                    description: 'Healthcare workflow context for prompt generation',
+                                    properties: {
+                                        resourceType: { type: 'string' },
+                                        workflow: { type: 'string' },
+                                        userType: { type: 'string' },
+                                    },
+                                },
+                                validation: {
+                                    type: 'object',
+                                    description: 'Validation rules for the user input',
+                                    properties: {
+                                        type: {
+                                            type: 'string',
+                                            enum: ['string', 'number', 'boolean', 'object', 'array'],
+                                        },
+                                        required: { type: 'boolean' },
+                                        pattern: { type: 'string' },
+                                        enum: { type: 'array' },
+                                    },
+                                },
+                                examples: {
+                                    type: 'array',
+                                    description: 'Example inputs to show to the user',
+                                },
+                            },
+                            required: ['prompt'],
+                        },
+                    },
                 ],
             };
         });
@@ -478,6 +595,35 @@ class FHIRMCPServer {
                             resourceType?: string;
                             workflow?: string;
                             userType?: string
+                        });
+
+                case 'fhir_create_interactive':
+                    return await this._createInteractive(args as {
+                            resourceType: string;
+                            resource?: any;
+                            interactive?: boolean
+                        });
+
+                case 'fhir_search_guided':
+                    return await this._searchGuided(args as {
+                            resourceType: string;
+                            parameters?: Record<string, unknown>;
+                            interactive?: boolean
+                        });
+
+                case 'patient_identify':
+                    return await this._patientIdentify(args as {
+                            searchParams?: Record<string, any>;
+                            allowMultiple?: boolean;
+                            interactive?: boolean
+                        });
+
+                case 'elicit_input':
+                    return await this._elicitInput(args as {
+                            prompt: string;
+                            context?: any;
+                            validation?: any;
+                            examples?: string[]
                         });
 
                 default:
@@ -1352,6 +1498,251 @@ GET /${resourceType}?date=ge2021-01-01`;
                 isError: true,
             };
         }
+    }
+
+    /**
+     * Interactive FHIR resource creation with elicitation support
+     */
+    private async _createInteractive(args: {
+        resourceType: string;
+        resource?: any;
+        interactive?: boolean
+    }): Promise<object> {
+        try {
+            const result = await this.elicitationHandlers.enhancedFhirCreate(args);
+
+            if (result.needsInput && result.elicitationRequest) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify({
+                                requiresInput: true,
+                                elicitation: {
+                                    prompt: result.elicitationRequest.prompt,
+                                    context: result.elicitationRequest.context,
+                                    required: result.elicitationRequest.required,
+                                    validation: result.elicitationRequest.validation,
+                                    examples: result.elicitationRequest.examples,
+                                },
+                                instructions: 'Please provide the requested information. Use the elicit_input tool with your response.',
+                            }, null, 2),
+                        },
+                    ],
+                };
+            }
+
+            // If no input needed, proceed with regular create
+            if (result.processedArgs) {
+                return await this._create(result.processedArgs);
+            }
+
+            throw new Error('Unexpected elicitation result state');
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+                    },
+                ],
+                isError: true,
+            };
+        }
+    }
+
+    /**
+     * Guided FHIR search with elicitation support
+     */
+    private async _searchGuided(args: {
+        resourceType: string;
+        parameters?: Record<string, unknown>;
+        interactive?: boolean
+    }): Promise<object> {
+        try {
+            const result = await this.elicitationHandlers.enhancedFhirSearch(args);
+
+            if (result.needsInput && result.elicitationRequest) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify({
+                                requiresInput: true,
+                                elicitation: {
+                                    prompt: result.elicitationRequest.prompt,
+                                    context: result.elicitationRequest.context,
+                                    required: result.elicitationRequest.required,
+                                    validation: result.elicitationRequest.validation,
+                                    examples: result.elicitationRequest.examples,
+                                },
+                                instructions: 'Please provide search parameters. Use the elicit_input tool with your response.',
+                            }, null, 2),
+                        },
+                    ],
+                };
+            }
+
+            // If no input needed, proceed with regular search
+            if (result.processedArgs) {
+                return await this._search(result.processedArgs);
+            }
+
+            throw new Error('Unexpected elicitation result state');
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+                    },
+                ],
+                isError: true,
+            };
+        }
+    }
+
+    /**
+     * Interactive patient identification with disambiguation
+     */
+    private async _patientIdentify(args: {
+        searchParams?: Record<string, any>;
+        allowMultiple?: boolean;
+        interactive?: boolean
+    }): Promise<object> {
+        try {
+            const { searchParams = {}, allowMultiple = false, interactive = true } = args;
+
+            // First, try to search for patients
+            if (Object.keys(searchParams).length > 0) {
+                const searchResult = await this._search({
+                    resourceType: 'Patient',
+                    parameters: searchParams,
+                });
+
+                // Parse the search response to check for multiple results
+                const searchData = JSON.parse(searchResult.content[0].text);
+                const patients = searchData.entry || [];
+
+                if (patients.length === 0) {
+                    return {
+                        content: [
+                            {
+                                type: 'text',
+                                text: 'No patients found matching the search criteria. Please try different search parameters.',
+                            },
+                        ],
+                    };
+                }
+
+                if (patients.length === 1 || allowMultiple) {
+                    return searchResult;
+                }
+
+                // Multiple results - need disambiguation if interactive
+                if (interactive && patients.length > 1) {
+                    const elicitationResult = await this.elicitationHandlers.enhancedPatientSearch({
+                        searchParams,
+                        searchResults: patients.map((entry: any) => entry.resource),
+                        interactive,
+                    });
+
+                    if (elicitationResult.needsInput && elicitationResult.elicitationRequest) {
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: JSON.stringify({
+                                        requiresInput: true,
+                                        multipleMatches: patients.length,
+                                        elicitation: {
+                                            prompt: elicitationResult.elicitationRequest.prompt,
+                                            context: elicitationResult.elicitationRequest.context,
+                                            required: elicitationResult.elicitationRequest.required,
+                                            validation: elicitationResult.elicitationRequest.validation,
+                                            examples: elicitationResult.elicitationRequest.examples,
+                                        },
+                                        instructions: 'Please select a patient by number. Use the elicit_input tool with your choice.',
+                                    }, null, 2),
+                                },
+                            ],
+                        };
+                    }
+                }
+
+                return searchResult;
+            }
+
+            // No search parameters - request them
+            const elicitationResult = await this.elicitationHandlers.enhancedPatientSearch({
+                searchParams: {},
+                interactive,
+            });
+
+            if (elicitationResult.needsInput && elicitationResult.elicitationRequest) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify({
+                                requiresInput: true,
+                                elicitation: {
+                                    prompt: elicitationResult.elicitationRequest.prompt,
+                                    context: elicitationResult.elicitationRequest.context,
+                                    required: elicitationResult.elicitationRequest.required,
+                                    validation: elicitationResult.elicitationRequest.validation,
+                                    examples: elicitationResult.elicitationRequest.examples,
+                                },
+                                instructions: 'Please provide patient identification information. Use the elicit_input tool with your response.',
+                            }, null, 2),
+                        },
+                    ],
+                };
+            }
+
+            throw new Error('Unable to identify patient with provided information');
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+                    },
+                ],
+                isError: true,
+            };
+        }
+    }
+
+    /**
+     * Direct input elicitation tool
+     */
+    private async _elicitInput(args: {
+        prompt: string;
+        context?: any;
+        validation?: any;
+        examples?: string[]
+    }): Promise<object> {
+        const { prompt, context = {}, validation, examples = [] } = args;
+
+        return {
+            content: [
+                {
+                    type: 'text',
+                    text: JSON.stringify({
+                        requiresInput: true,
+                        elicitation: {
+                            prompt,
+                            context: `Direct input request - ${context.description || 'User input needed'}`,
+                            required: validation?.required !== false,
+                            validation,
+                            examples,
+                        },
+                        instructions: 'This tool is requesting input from you. Please provide the requested information in your next message.',
+                    }, null, 2),
+                },
+            ],
+        };
     }
 
     /**
