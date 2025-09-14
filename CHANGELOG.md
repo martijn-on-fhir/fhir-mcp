@@ -1,3 +1,10 @@
+## [1.9.2](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.9.1...v1.9.2) (2025-09-14)
+
+
+### Bug Fixes
+
+* disable console output to prevent MCP stdio protocol corruption ([2f4f807](https://github.com/martijn-on-fhir/fhir-mcp/commit/2f4f8073727e533f363b4212dd549fd98064bc19))
+
 ## [1.9.1](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.9.0...v1.9.1) (2025-09-14)
 
 
