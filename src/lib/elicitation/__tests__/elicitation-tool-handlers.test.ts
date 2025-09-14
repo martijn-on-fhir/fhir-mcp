@@ -182,7 +182,7 @@ describe('ElicitationToolHandlers', () => {
             const result = handlers.processElicitationResponse(
                 request,
                 'John Smith',
-                context,
+                context
             );
 
             expect(result.success).toBe(true);
@@ -210,7 +210,7 @@ describe('ElicitationToolHandlers', () => {
             const result = handlers.processElicitationResponse(
                 request,
                 'invalid',
-                context,
+                context
             );
 
             expect(result.success).toBe(false);

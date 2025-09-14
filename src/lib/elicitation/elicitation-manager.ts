@@ -48,7 +48,7 @@ export class ElicitationManager {
         context: ElicitationContext,
         fieldName: string,
         fieldType: string,
-        isRequired = true,
+        isRequired = true
     ): ElicitationRequest {
         const resourceContext = context.resourceType ? `for ${context.resourceType}` : '';
         const workflowContext = context.workflow ? `during ${context.workflow}` : '';
@@ -56,7 +56,7 @@ export class ElicitationManager {
         const basePrompt = this.promptManager.getClinicalContextPrompt(
             context.resourceType,
             context.workflow,
-            context.userType,
+            context.userType
         );
 
         const fieldPrompt = `${basePrompt}
@@ -82,18 +82,18 @@ Required: ${isRequired ? 'Yes' : 'No'}`;
     public createDisambiguationElicitation(
         context: ElicitationContext,
         fieldName: string,
-        options: any[],
+        options: any[]
     ): ElicitationRequest {
         const resourceContext = context.resourceType ? `for ${context.resourceType}` : '';
 
         const basePrompt = this.promptManager.getClinicalContextPrompt(
             context.resourceType,
             context.workflow,
-            context.userType,
+            context.userType
         );
 
         const optionsText = options.map((option, index) =>
-            `${index + 1}. ${this._formatOption(option, fieldName)}`,
+            `${index + 1}. ${this._formatOption(option, fieldName)}`
         ).join('\n');
 
         const disambiguationPrompt = `${basePrompt}
@@ -123,12 +123,12 @@ Please respond with the number of your choice (1-${options.length}).`;
     public createWorkflowElicitation(
         context: ElicitationContext,
         parameterName: string,
-        description: string,
+        description: string
     ): ElicitationRequest {
         const basePrompt = this.promptManager.getClinicalContextPrompt(
             context.resourceType,
             context.workflow,
-            context.userType,
+            context.userType
         );
 
         const workflowPrompt = `${basePrompt}

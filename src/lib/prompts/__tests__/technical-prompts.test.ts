@@ -24,7 +24,7 @@ describe('TechnicalPrompts', () => {
 
             // All prompts should have technical-related tags
             const hasNonTechnicalPrompt = prompts.some(prompt =>
-                !prompt.tags.some(tag => ['technical', 'implementation', 'api', 'integration'].includes(tag)),
+                !prompt.tags.some(tag => ['technical', 'implementation', 'api', 'integration'].includes(tag))
             );
             expect(hasNonTechnicalPrompt).toBe(false);
         });

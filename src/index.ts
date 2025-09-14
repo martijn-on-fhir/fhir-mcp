@@ -3,7 +3,12 @@
 import {Server} from '@modelcontextprotocol/sdk/server/index.js';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
-    CallToolRequestSchema, ListResourcesRequestSchema, ListResourceTemplatesRequestSchema, ListRootsRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema,
+    CallToolRequestSchema,
+    ListResourcesRequestSchema,
+    ListResourceTemplatesRequestSchema,
+    ListRootsRequestSchema,
+    ListToolsRequestSchema,
+    ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import {loadConfigWithFile as loadConfig} from './lib/configuration/config-loader.js';
 import {ServerConfig} from './lib/configuration/config.js';
@@ -119,7 +124,7 @@ class FHIRMCPServer {
                     listChanged: true,
                 },
             },
-        },
+        }
         );
 
         this._setupHandlers();
@@ -139,7 +144,10 @@ class FHIRMCPServer {
      */
     private _setUpAxios(): void {
 
-        console.error(`[AXIOS_SETUP] Setting up Axios with baseURL: ${this.config.url}`);
+        void this._sendFeedback({
+            message: `Setting up Axios with baseURL: ${this.config.url}`,
+            level: 'debug',
+        });
 
         this.instance = new Axios({
             baseURL: this.config.url,
@@ -148,25 +156,43 @@ class FHIRMCPServer {
                 'Content-Type': 'application/fhir+json',
             },
             timeout: this.config.timeout || 30000,
-            // Add request/response interceptors for debugging
             transformRequest: [(data): any => {
-                console.error('[AXIOS_SETUP] Transform request - data type:', typeof data);
 
                 if (typeof data === 'object') {
+
                     const jsonString = JSON.stringify(data);
-                    console.error('[AXIOS_SETUP] Transforming object to JSON string, length:', jsonString.length);
+
+                    void this._sendFeedback({
+                        message: '[AXIOS_SETUP] Transforming object to JSON string',
+                        level: 'debug',
+                        context: {
+                            jsonLength: jsonString.length,
+                        },
+                    });
                     return jsonString;
                 }
 
                 return data;
             }],
             transformResponse: [(data): any => {
-                console.error('[AXIOS_SETUP] Transform response - data type:', typeof data, 'length:', data?.length || 'N/A');
+                
+                this._sendFeedback({
+                    message: '[AXIOS_SETUP] Transform response',
+                    level: 'debug',
+                    context: {
+                        data: data,
+                        dataLength: data?.length || 'N/A',
+                    },
+                });
+     
                 return data; // Let our _executeRequest handle JSON parsing
             }],
         });
 
-        console.error('[AXIOS_SETUP] Axios instance created successfully');
+        this._sendFeedback({
+            message: 'Axios instance created successfully',
+            level: 'info',
+        });
     }
 
     /**
@@ -503,9 +529,9 @@ class FHIRMCPServer {
                                     type: 'object',
                                     description: 'Healthcare workflow context for prompt generation',
                                     properties: {
-                                        resourceType: { type: 'string' },
-                                        workflow: { type: 'string' },
-                                        userType: { type: 'string' },
+                                        resourceType: {type: 'string'},
+                                        workflow: {type: 'string'},
+                                        userType: {type: 'string'},
                                     },
                                 },
                                 validation: {
@@ -516,9 +542,9 @@ class FHIRMCPServer {
                                             type: 'string',
                                             enum: ['string', 'number', 'boolean', 'object', 'array'],
                                         },
-                                        required: { type: 'boolean' },
-                                        pattern: { type: 'string' },
-                                        enum: { type: 'array' },
+                                        required: {type: 'boolean'},
+                                        pattern: {type: 'string'},
+                                        enum: {type: 'array'},
                                     },
                                 },
                                 examples: {
@@ -712,7 +738,7 @@ class FHIRMCPServer {
                                     hasApiKey: !!this.config.apiKey,
                                 },
                                 null,
-                                2,
+                                2
                             ),
                         },
                     ],
@@ -1325,7 +1351,7 @@ GET /${resourceType}?date=ge2021-01-01`;
                             hasApiKey: !!this.config.apiKey,
                         },
                         null,
-                        2,
+                        2
                     ),
                 },
             ],
@@ -1352,14 +1378,14 @@ GET /${resourceType}?date=ge2021-01-01`;
             console.error(logMessage);
             break;
         case 'warn':
-            console.error(logMessage);
+            console.warn(logMessage);
             break;
         case 'debug':
-            console.error(logMessage);
+            console.debug(logMessage);
             break;
         case 'info':
         default:
-            console.error(logMessage);
+            console.info(logMessage);
             break;
         }
 
@@ -1537,7 +1563,7 @@ GET /${resourceType}?date=ge2021-01-01`;
                 return await this._create(result.processedArgs);
             }
 
-            throw new Error('Unexpected elicitation result state');
+            throw new Error(`Unexpected elicitation result state: needsInput=${result.needsInput}, hasProcessedArgs=${!!result.processedArgs}, hasElicitationRequest=${!!result.elicitationRequest}`);
         } catch (error) {
             return {
                 content: [
@@ -1588,8 +1614,11 @@ GET /${resourceType}?date=ge2021-01-01`;
                 return await this._search(result.processedArgs);
             }
 
-            throw new Error('Unexpected elicitation result state');
+            throw new Error(`Unexpected elicitation result state: needsInput=${result.needsInput}, 
+            hasProcessedArgs=${!!result.processedArgs}, hasElicitationRequest=${!!result.elicitationRequest}`);
+
         } catch (error) {
+
             return {
                 content: [
                     {
@@ -1606,12 +1635,12 @@ GET /${resourceType}?date=ge2021-01-01`;
      * Interactive patient identification with disambiguation
      */
     private async _patientIdentify(args: {
-        searchParams?: Record<string, any>;
-        allowMultiple?: boolean;
+        searchParams?: Record<string, any>,
+        allowMultiple?: boolean,
         interactive?: boolean
     }): Promise<object> {
         try {
-            const { searchParams = {}, allowMultiple = false, interactive = true } = args;
+            const {searchParams = {}, allowMultiple = false, interactive = true} = args;
 
             // First, try to search for patients
             if (Object.keys(searchParams).length > 0) {
@@ -1641,6 +1670,7 @@ GET /${resourceType}?date=ge2021-01-01`;
 
                 // Multiple results - need disambiguation if interactive
                 if (interactive && patients.length > 1) {
+
                     const elicitationResult = await this.elicitationHandlers.enhancedPatientSearch({
                         searchParams,
                         searchResults: patients.map((entry: any) => entry.resource),
@@ -1648,6 +1678,7 @@ GET /${resourceType}?date=ge2021-01-01`;
                     });
 
                     if (elicitationResult.needsInput && elicitationResult.elicitationRequest) {
+
                         return {
                             content: [
                                 {
@@ -1680,6 +1711,7 @@ GET /${resourceType}?date=ge2021-01-01`;
             });
 
             if (elicitationResult.needsInput && elicitationResult.elicitationRequest) {
+
                 return {
                     content: [
                         {
@@ -1701,7 +1733,9 @@ GET /${resourceType}?date=ge2021-01-01`;
             }
 
             throw new Error('Unable to identify patient with provided information');
+
         } catch (error) {
+
             return {
                 content: [
                     {
@@ -1718,12 +1752,13 @@ GET /${resourceType}?date=ge2021-01-01`;
      * Direct input elicitation tool
      */
     private async _elicitInput(args: {
-        prompt: string;
-        context?: any;
-        validation?: any;
+        prompt: string,
+        context?: any,
+        validation?: any,
         examples?: string[]
     }): Promise<object> {
-        const { prompt, context = {}, validation, examples = [] } = args;
+
+        const {prompt, context = {}, validation, examples = []} = args;
 
         return {
             content: [
@@ -1778,6 +1813,11 @@ GET /${resourceType}?date=ge2021-01-01`;
 
             if (typeof response.data === 'string') {
 
+                this._sendFeedback({
+                    message: `Received response from server: ${response.data}`,
+                    level: 'debug',
+                });
+
                 try {
                     return JSON.parse(response.data);
                 } catch {
@@ -1789,13 +1829,12 @@ GET /${resourceType}?date=ge2021-01-01`;
 
         }).catch(async (error) => {
 
-            console.error('[EXECUTE_REQUEST] Error details:', {
-                message: error.message,
-                code: error.code,
-                status: error.response?.status,
-                statusText: error.response?.statusText,
-                responseData: error.response?.data,
-                responseHeaders: error.response?.headers,
+            this._sendFeedback({
+                message: `Error executing request: ${error instanceof Error ? error.message : String(error)}`,
+                level: 'error',
+                context: {
+                    error,
+                },
             });
 
             await this._sendFeedback({
@@ -1821,18 +1860,42 @@ GET /${resourceType}?date=ge2021-01-01`;
 
         const transport = new StdioServerTransport();
         await this.server.connect(transport);
-        console.error('FHIR MCP Server running on stdio');
+
+        this._sendFeedback({
+            message: 'MCP server running on stdio)',
+            level: 'info',
+            context: {
+                transport: transport.constructor.name,
+            },
+        });
     }
 }
 
+/**
+ * Initializes and runs the FHIR MCP server.
+ *
+ * This method creates an instance of the FHIRMCPServer, starts it, and handles any runtime errors
+ * that may occur during the startup process. If an error is encountered, it is logged and the process is terminated.
+ *
+ * @return {Promise<void>} Resolves when the server starts successfully or logs an error and exits on failure.
+ */
 async function main(): Promise<void> {
 
     try {
+
         const server = new FHIRMCPServer();
         await server.run();
+
     } catch (error) {
 
-        console.error('Failed to start server:', error);
+        console.error('[MAIN] Error details:', {
+            message: `Error starting MCP server: ${error instanceof Error ? error.message : String(error)}`,
+            level: 'error',
+            context: {
+                error,
+            },
+        });
+
         process.exit(1);
     }
 }
@@ -1845,6 +1908,7 @@ if (import.meta.url.startsWith('file://') && process.argv[1]) {
     if (scriptPath.endsWith(argPath) || scriptPath.includes(argPath)) {
         main().catch(console.error);
     }
+
 } else {
     main().catch(console.error);
 }

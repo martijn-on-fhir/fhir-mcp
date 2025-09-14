@@ -48,12 +48,28 @@ export default [
             'indent': ['error', 4],
             'quotes': ['error', 'single'],
             'semi': ['error', 'always'],
-            'comma-dangle': ['error', 'always-multiline'],
+            'comma-dangle': ['error', {
+                'arrays': 'always-multiline',
+                'objects': 'always-multiline',
+                'imports': 'always-multiline',
+                'exports': 'always-multiline',
+                'functions': 'never'
+            }],
+            'comma-style': ['error', 'last'], // Allow trailing commas, not leading
             'array-bracket-spacing': ['error', 'never'],
             'no-trailing-spaces': [2, {'skipBlankLines': true}],
             'no-multiple-empty-lines': [2, {
                 'max': 1,
                 'maxEOF': 1
+            }],
+            'max-len': ['error', {
+                'code': 150,
+                'tabWidth': 4,
+                'ignoreComments': true,
+                'ignoreUrls': true,
+                'ignoreStrings': true,
+                'ignoreTemplateLiterals': true,
+                'ignoreRegExpLiterals': true
             }],
 
             // FHIR/Healthcare specific
@@ -187,12 +203,28 @@ export default [
             'indent': ['error', 4],
             'quotes': ['error', 'single'],
             'semi': ['error', 'always'],
-            'comma-dangle': ['error', 'always-multiline'],
+            'comma-dangle': ['error', {
+                'arrays': 'always-multiline',
+                'objects': 'always-multiline',
+                'imports': 'always-multiline',
+                'exports': 'always-multiline',
+                'functions': 'never'
+            }],
+            'comma-style': ['error', 'last'], // Allow trailing commas, not leading
             'array-bracket-spacing': ['error', 'never'],
             'no-trailing-spaces': [2, {'skipBlankLines': true}],
             'no-multiple-empty-lines': [2, {
                 'max': 2, // More relaxed for tests
                 'maxEOF': 1
+            }],
+            'max-len': ['error', {
+                'code': 180, // Even more relaxed for tests
+                'tabWidth': 4,
+                'ignoreComments': true,
+                'ignoreUrls': true,
+                'ignoreStrings': true,
+                'ignoreTemplateLiterals': true,
+                'ignoreRegExpLiterals': true
             }],
 
             // More relaxed naming for tests

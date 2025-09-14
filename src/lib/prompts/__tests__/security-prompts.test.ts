@@ -24,7 +24,7 @@ describe('SecurityPrompts', () => {
 
             // All prompts should have security-related tags
             const hasNonSecurityPrompt = prompts.some(prompt =>
-                !prompt.tags.some(tag => ['security', 'hipaa', 'privacy', 'compliance', 'phi', 'audit', 'consent', 'access-control', 'encryption', 'breach-notification', 'risk-assessment', 'patient-rights', 'fhir-consent', 'minimum-necessary', 'de-identification'].includes(tag)),
+                !prompt.tags.some(tag => ['security', 'hipaa', 'privacy', 'compliance', 'phi', 'audit', 'consent', 'access-control', 'encryption', 'breach-notification', 'risk-assessment', 'patient-rights', 'fhir-consent', 'minimum-necessary', 'de-identification'].includes(tag))
             );
             expect(hasNonSecurityPrompt).toBe(false);
         });

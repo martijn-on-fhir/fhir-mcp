@@ -74,7 +74,12 @@ export class Narrative {
 
         if (!name) return 'Unknown';
 
-        if (Array.isArray(name)) name = name[0];
+        if (Array.isArray(name)) {
+            if (name.length === 0) return 'Unknown';
+            name = name[0];
+        }
+
+        if (!name) return 'Unknown';
 
         if (name.text) return Narrative.escapeHtml(name.text);
 
@@ -91,6 +96,8 @@ export class Narrative {
      * Resource-specific narrative generators
      */
     private static generatePatientNarrative(resource: any, style: string): string {
+
+        if (!resource) resource = {};
 
         const name = Narrative.getName(resource.name);
         const birthDate = Narrative.formatDate(resource.birthDate);
@@ -127,6 +134,8 @@ export class Narrative {
     }
 
     private static generateObservationNarrative(resource: any, style: string): string {
+
+        if (!resource) resource = {};
 
         const code = resource.code?.text || resource.code?.coding?.[0]?.display || 'Observation';
         const effectiveDateTime = Narrative.formatDate(resource.effectiveDateTime);
@@ -174,6 +183,8 @@ export class Narrative {
 
     private static generateEncounterNarrative(resource: any, style: string): string {
 
+        if (!resource) resource = {};
+
         const status = Narrative.escapeHtml(resource.status);
         const type = resource.type?.[0]?.text || resource.type?.[0]?.coding?.[0]?.display || 'Healthcare encounter';
         const startDate = Narrative.formatDate(resource.period?.start);
@@ -199,6 +210,8 @@ export class Narrative {
 
     private static generateConditionNarrative(resource: any, style: string): string {
 
+        if (!resource) resource = {};
+
         const code = resource.code?.text || resource.code?.coding?.[0]?.display || 'Condition';
         const clinicalStatus = resource.clinicalStatus?.coding?.[0]?.code;
         const onsetDateTime = Narrative.formatDate(resource.onsetDateTime);
@@ -221,6 +234,8 @@ export class Narrative {
     }
 
     private static generateMedicationRequestNarrative(resource: any, style: string): string {
+
+        if (!resource) resource = {};
 
         const medication = resource.medicationCodeableConcept?.text ||
                           resource.medicationCodeableConcept?.coding?.[0]?.display ||
@@ -252,6 +267,8 @@ export class Narrative {
 
     private static generateDiagnosticReportNarrative(resource: any, style: string): string {
 
+        if (!resource) resource = {};
+
         const code = resource.code?.text || resource.code?.coding?.[0]?.display || 'Diagnostic Report';
         const status = Narrative.escapeHtml(resource.status);
         const effectiveDateTime = Narrative.formatDate(resource.effectiveDateTime);
@@ -278,6 +295,8 @@ export class Narrative {
     }
 
     private static generateGenericNarrative(resource: any, resourceType: string, style: string): string {
+
+        if (!resource) resource = {};
 
         let narrative = '<div xmlns="http://www.w3.org/1999/xhtml">';
         

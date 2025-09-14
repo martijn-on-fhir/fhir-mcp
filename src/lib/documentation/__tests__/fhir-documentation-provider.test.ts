@@ -448,7 +448,7 @@ describe('FHIR Documentation Provider', () => {
 
             // Verify that all returned resources can actually be retrieved
             const promises = resources.map(resource =>
-                provider.getFHIRDocumentation(resource.uri),
+                provider.getFHIRDocumentation(resource.uri)
             );
 
             return Promise.all(promises).then(results => {

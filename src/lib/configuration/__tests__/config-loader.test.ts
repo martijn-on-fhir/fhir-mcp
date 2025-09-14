@@ -155,7 +155,7 @@ describe('Configuration Loader Module', () => {
 
                 expect(consoleErrorSpy).toHaveBeenCalledWith(
                     'Failed to read mcp-config.json:',
-                    expect.any(Error),
+                    expect.any(Error)
                 );
                 expect(config).toEqual({
                     url: 'https://fallback.example.com',
@@ -175,7 +175,7 @@ describe('Configuration Loader Module', () => {
 
                 expect(consoleErrorSpy).toHaveBeenCalledWith(
                     'Failed to read mcp-config.json:',
-                    expect.any(Error),
+                    expect.any(Error)
                 );
                 expect(config).toEqual({
                     url: 'https://fallback-error.example.com',
@@ -412,7 +412,7 @@ describe('Configuration Loader Module', () => {
                 // BOM causes JSON parse error, so it falls back to environment
                 expect(consoleErrorSpy).toHaveBeenCalledWith(
                     'Failed to read mcp-config.json:',
-                    expect.any(Error),
+                    expect.any(Error)
                 );
                 expect(config.url).toBe('https://fallback-after-bom.example.com');
                 expect(config.timeout).toBe(30000);

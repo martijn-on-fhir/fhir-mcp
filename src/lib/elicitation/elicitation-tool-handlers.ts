@@ -48,7 +48,7 @@ export class ElicitationToolHandlers {
             const elicitationRequest = this.elicitationManager.createWorkflowElicitation(
                 context,
                 'resource',
-                `Complete FHIR ${resourceType} resource data in JSON format`,
+                `Complete FHIR ${resourceType} resource data in JSON format`
             );
 
             elicitationRequest.validation = {
@@ -78,7 +78,7 @@ export class ElicitationToolHandlers {
                 { ...context, missingFields },
                 fieldName,
                 this._getFieldType(resourceType, fieldName) || 'string',
-                true,
+                true
             );
 
             return {
@@ -115,14 +115,14 @@ export class ElicitationToolHandlers {
         // Check if we have meaningful search parameters
         const paramKeys = Object.keys(parameters);
         const hasSearchParams = paramKeys.some(key =>
-            !key.startsWith('_') && parameters[key] && parameters[key] !== '',
+            !key.startsWith('_') && parameters[key] && parameters[key] !== ''
         );
 
         if (!hasSearchParams) {
             const elicitationRequest = this.elicitationManager.createWorkflowElicitation(
                 context,
                 'searchParameters',
-                `Search criteria for finding ${resourceType} resources. You can use fields like name, birthdate, identifier, etc.`,
+                `Search criteria for finding ${resourceType} resources. You can use fields like name, birthdate, identifier, etc.`
             );
 
             elicitationRequest.examples = this._getSearchExamples(resourceType);
@@ -165,7 +165,7 @@ export class ElicitationToolHandlers {
                 context,
                 'id',
                 'string',
-                true,
+                true
             );
 
             return {
@@ -180,7 +180,7 @@ export class ElicitationToolHandlers {
             const elicitationRequest = this.elicitationManager.createWorkflowElicitation(
                 context,
                 'resource',
-                `Updated FHIR ${resourceType} resource data in JSON format`,
+                `Updated FHIR ${resourceType} resource data in JSON format`
             );
 
             elicitationRequest.validation = {
@@ -225,7 +225,7 @@ export class ElicitationToolHandlers {
             const elicitationRequest = this.elicitationManager.createDisambiguationElicitation(
                 context,
                 'patient',
-                searchResults,
+                searchResults
             );
 
             return {
@@ -240,7 +240,7 @@ export class ElicitationToolHandlers {
             const elicitationRequest = this.elicitationManager.createWorkflowElicitation(
                 context,
                 'patientIdentifier',
-                'Patient identification information such as name, date of birth, or medical record number',
+                'Patient identification information such as name, date of birth, or medical record number'
             );
 
             elicitationRequest.examples = [
@@ -266,7 +266,7 @@ export class ElicitationToolHandlers {
     public processElicitationResponse(
         request: ElicitationRequest,
         userResponse: string,
-        _context: ElicitationContext,
+        _context: ElicitationContext
     ): { success: boolean; processedValue?: any; errors?: string[] } {
         const validation = this.elicitationManager.validateResponse(request, userResponse);
 
