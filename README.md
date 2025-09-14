@@ -755,7 +755,39 @@ Add to your Claude Desktop configuration:
 
 ## Real-Time Server Notifications
 
-The FHIR MCP Server includes a **comprehensive notification system** that provides real-time updates about server operations, connection status, and progress tracking. These notifications appear in the **Server Notifications** section of MCP Inspector and other MCP-compatible tools.
+The FHIR MCP Server includes a **comprehensive notification system** powered by the dedicated `FHIRNotificationManager` class that provides real-time updates about server operations, connection status, and progress tracking. These notifications appear in the **Server Notifications** section of MCP Inspector and other MCP-compatible tools.
+
+### 🏗️ **Notification Architecture**
+
+The notification system is built with a clean, modular architecture:
+
+#### **FHIRNotificationManager Class**
+```typescript
+class FHIRNotificationManager {
+  // Core notification methods
+  notifyConnectionStatus(status, details?)
+  notifyProgress(operation, progress, details?)
+  notifyError(error, context?)
+  notifyResourceOperation(operation, resourceType, details?)
+  notifyValidation(type, message, resourceType?, details?)
+
+  // Enhanced notification methods
+  notifyServerStartup(capabilities, transport?)
+  notifyOperationStart(operation, resourceType?, details?)
+  notifyOperationComplete(operation, resourceType?, details?)
+  notifyBatchOperation(operation, resourceTypes, count, details?)
+  notifyValidationSummary(resourceType, errorCount, warningCount, details?)
+  notifyConnectionTest(success, responseTime?, details?)
+  notifyOperationTimeout(operation, timeout, details?)
+}
+```
+
+#### **Type-Safe Notification Interfaces**
+- **`ConnectionStatusData`**: Connection monitoring with status tracking
+- **`OperationProgressData`**: Progress updates with automatic value clamping (0-100)
+- **`ResourceOperationData`**: FHIR operation tracking with resource context
+- **`ErrorData`**: Error reporting with detailed context information
+- **`ValidationData`**: Validation results with error/warning categorization
 
 ### 🔔 **Notification Types**
 
@@ -920,7 +952,7 @@ The notification system provides unprecedented visibility into FHIR operations, 
 ✅ **Core FHIR Operations** - Full CRUD operations with validation
 ✅ **FHIR Auto-Completion System** - Intelligent completion for resource types, search parameters, status values, and code systems with MCP specification compliance
 ✅ **Interactive Elicitation System** - Guided user input collection with healthcare context and validation
-✅ **Real-Time Notifications** - Comprehensive server notifications for MCP Inspector with connection status, progress tracking, error reporting, and validation feedback
+✅ **Real-Time Notifications** - Modular notification system with dedicated FHIRNotificationManager class providing 12 notification methods for comprehensive monitoring
 ✅ **Resource Validation** - Complete R4 specification compliance checking
 ✅ **Narrative Generation** - Human-readable resource descriptions
 ✅ **Comprehensive FHIR Documentation** - Built-in R4 specification, resource types, data types, search, validation, and terminology guidance

@@ -8,6 +8,15 @@ nav_order: 5
 
 The FHIR MCP Server includes a comprehensive notification system that provides real-time updates about server operations, connection status, and progress tracking. These notifications appear in the **Server Notifications** section of MCP Inspector and other MCP-compatible tools.
 
+## 🏗️ Notification Architecture
+
+The notification system is built using a dedicated `FHIRNotificationManager` class that provides type-safe, structured notifications:
+
+- **Type Safety**: All notifications use TypeScript interfaces for consistent data structures
+- **Centralized Management**: Single class manages all notification types and formats
+- **MCP Integration**: Built on the MCP protocol's `sendLoggingMessage` method
+- **Enhanced Features**: 12 notification methods including batch operations and validation summaries
+
 ## 🔔 Notification Types
 
 ### 1. Connection Status Notifications
@@ -205,9 +214,43 @@ Here's what you'll see when creating a Patient resource:
 
 The notification system provides unprecedented visibility into FHIR operations, making development, debugging, and monitoring significantly more efficient.
 
+## 🔧 FHIRNotificationManager Features
+
+The notification system includes these enhanced methods:
+
+### Core Notification Methods
+- `notifyConnectionStatus()` - Connection state changes
+- `notifyProgress()` - Operation progress tracking (0-100%)
+- `notifyError()` - Error reporting with context
+- `notifyResourceOperation()` - FHIR CRUD operations
+- `notifyValidation()` - Resource validation results
+
+### Enhanced Methods
+- `notifyServerStartup()` - Server initialization status
+- `notifyOperationStart()` - Operation initiation
+- `notifyOperationComplete()` - Operation completion
+- `notifyBatchOperation()` - Batch resource operations
+- `notifyValidationSummary()` - Comprehensive validation reports
+- `notifyConnectionTest()` - Connection health checks
+- `notifyOperationTimeout()` - Timeout handling
+
+### Type Safety Features
+- `ConnectionStatusData` interface for connection events
+- `OperationProgressData` interface for progress tracking
+- `ErrorData` interface for error context
+- `ResourceOperationData` interface for FHIR operations
+- `ValidationData` interface for validation results
+
 ## Notification Settings
 
-Currently, all notification types are enabled by default. Future versions may include:
+Currently, all notification types are enabled by default. The `FHIRNotificationManager` provides:
+
+- **Automatic Timestamping**: ISO 8601 timestamps for all events
+- **Progress Clamping**: Progress values automatically clamped to 0-100 range
+- **Context Preservation**: Full error and operation context included
+- **Type-Safe Data**: Structured interfaces prevent notification format errors
+
+Future versions may include:
 
 - Notification filtering by type or severity
 - Custom notification levels (verbose, normal, quiet)

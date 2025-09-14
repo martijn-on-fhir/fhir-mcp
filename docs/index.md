@@ -14,7 +14,7 @@ The FHIR MCP Server transforms static FHIR operations into intelligent, conversa
 
 - **FHIR Auto-Completion**: Intelligent completion for resource types, search parameters, status values, and code systems
 - **Interactive Elicitation**: Guided user input collection with healthcare context
-- **Real-Time Notifications**: Comprehensive server monitoring for MCP Inspector with connection status, progress tracking, and error reporting
+- **Real-Time Notifications**: Type-safe notification system with FHIRNotificationManager for comprehensive server monitoring
 - **Smart Validation**: FHIR-specific patterns and clinical data validation
 - **Patient Disambiguation**: Intelligent handling of multiple patient matches
 - **Comprehensive Documentation**: Built-in FHIR R4 specification access
@@ -41,7 +41,7 @@ The FHIR MCP Server transforms static FHIR operations into intelligent, conversa
 ## 🚀 What's New in v1.10.3
 
 ✅ **FHIR Auto-Completion System** - Intelligent completion for resource types, search parameters, status values, and code systems with MCP specification compliance
-✅ **Real-Time Server Notifications** - Comprehensive monitoring system for MCP Inspector with 6 notification types
+✅ **Real-Time Server Notifications** - Type-safe FHIRNotificationManager with 12 notification methods for comprehensive monitoring
 ✅ **Connection Status Monitoring** - Live FHIR server connectivity tracking with error detection
 ✅ **Operation Progress Tracking** - Real-time progress updates for searches, creates, and validations
 ✅ **Enhanced Error Reporting** - Detailed error context with actionable debugging information

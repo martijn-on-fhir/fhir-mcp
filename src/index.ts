@@ -19,6 +19,7 @@ import {FHIRDocumentationProvider} from './lib/documentation/fhir-documentation-
 import {ResourceTemplateManager} from './lib/resources/resource-template-manager.js';
 import {ElicitationToolHandlers} from './lib/elicitation/elicitation-tool-handlers.js';
 import {FHIRCompletionManager} from './lib/completions/fhir-completion-manager.js';
+import {FHIRNotificationManager} from './lib/notifications/fhir-notification-manager.js';
 import {Axios} from 'axios';
 
 /**
@@ -115,6 +116,16 @@ class FHIRMCPServer {
      */
     private completionManager: FHIRCompletionManager;
 
+    /**
+     * An instance of `FHIRNotificationManager` responsible for managing all server
+     * notifications including connection status, operation progress, errors,
+     * resource operations, and validation results.
+     *
+     * This manager provides real-time updates through the MCP protocol's
+     * sendLoggingMessage method for monitoring and debugging purposes.
+     */
+    private notificationManager: FHIRNotificationManager;
+
     constructor() {
 
         this.config = loadConfig();
@@ -141,6 +152,9 @@ class FHIRMCPServer {
         }
         );
 
+        // Initialize notification manager after server is created
+        this.notificationManager = new FHIRNotificationManager(this.server, this.config.url);
+
         this._setupHandlers();
         this._setUpAxios();
     }
@@ -163,7 +177,7 @@ class FHIRMCPServer {
             level: 'debug',
         });
 
-        void this._notifyConnectionStatus('connecting', {
+        void this.notificationManager.notifyConnectionStatus('connecting', {
             message: `Connecting to FHIR server at ${this.config.url}`,
         });
 
@@ -212,7 +226,7 @@ class FHIRMCPServer {
             level: 'info',
         });
 
-        void this._notifyConnectionStatus('connected', {
+        void this.notificationManager.notifyConnectionStatus('connected', {
             message: 'Successfully connected to FHIR server',
             timeout: this.config.timeout || 30000,
         });
@@ -1126,7 +1140,7 @@ GET /${resourceType}?date=ge2021-01-01`;
 
         const {resourceType, parameters = {}} = args;
 
-        void this._notifyResourceOperation('search', resourceType, {
+        void this.notificationManager.notifyResourceOperation('search', resourceType, {
             parameters,
             message: `Searching for ${resourceType} resources`,
         });
@@ -1140,7 +1154,7 @@ GET /${resourceType}?date=ge2021-01-01`;
 
         const url = `fhir/${resourceType}?${searchParams.toString()}`;
 
-        void this._notifyProgress('search', 50, {
+        void this.notificationManager.notifyProgress('search', 50, {
             resourceType,
             message: `Executing search query for ${resourceType}`,
         });
@@ -1148,7 +1162,7 @@ GET /${resourceType}?date=ge2021-01-01`;
         const response = await this._executeRequest(url, 'GET');
 
         const resultCount = (response as any)?.entry?.length || 0;
-        void this._notifyProgress('search', 100, {
+        void this.notificationManager.notifyProgress('search', 100, {
             resourceType,
             message: `Search completed: found ${resultCount} ${resourceType} resources`,
             resultCount,
@@ -1194,21 +1208,21 @@ GET /${resourceType}?date=ge2021-01-01`;
         const {resourceType, resource} = args;
         const url = `fhir/${resourceType}`;
 
-        void this._notifyResourceOperation('create', resourceType, {
+        void this.notificationManager.notifyResourceOperation('create', resourceType, {
             resourceId: resource.id || 'new',
             message: `Creating ${resourceType} resource`,
         });
 
         try {
 
-            void this._notifyProgress('create', 50, {
+            void this.notificationManager.notifyProgress('create', 50, {
                 resourceType,
                 message: `Submitting ${resourceType} to FHIR server`,
             });
 
             const response = await this._executeRequest(url, 'POST', resource);
 
-            void this._notifyProgress('create', 100, {
+            void this.notificationManager.notifyProgress('create', 100, {
                 resourceType,
                 message: `Successfully created ${resourceType} resource`,
                 resourceId: (response as any).id || 'unknown',
@@ -1224,7 +1238,7 @@ GET /${resourceType}?date=ge2021-01-01`;
             };
         } catch (error) {
 
-            void this._notifyError(`Failed to create ${resourceType} resource`, {
+            void this.notificationManager.notifyError(`Failed to create ${resourceType} resource`, {
                 resourceType,
                 error: error instanceof Error ? error.message : String(error),
             });
@@ -1245,7 +1259,7 @@ GET /${resourceType}?date=ge2021-01-01`;
         const {resourceType, resource} = args;
         const url = 'fhir/$validate';
 
-        void this._notifyResourceOperation('create', resourceType, {
+        void this.notificationManager.notifyResourceOperation('create', resourceType, {
             resourceId: resource.id || 'unknown',
             message: `Validating ${resourceType} resource`,
             operation: 'validate',
@@ -1262,14 +1276,14 @@ GET /${resourceType}?date=ge2021-01-01`;
 
             if (errors.length > 0) {
 
-                void this._notifyValidation('error', `Validation failed with ${errors.length} error(s)`, resourceType, {
+                void this.notificationManager.notifyValidation('error', `Validation failed with ${errors.length} error(s)`, resourceType, {
                     errorCount: errors.length,
                     warningCount: warnings.length,
                 });
 
             } else if (warnings.length > 0) {
 
-                void this._notifyValidation('warning', `Validation passed with ${warnings.length} warning(s)`, resourceType, {
+                void this.notificationManager.notifyValidation('warning', `Validation passed with ${warnings.length} warning(s)`, resourceType, {
                     warningCount: warnings.length,
                 });
             }
@@ -1476,91 +1490,6 @@ GET /${resourceType}?date=ge2021-01-01`;
                 },
             ],
         };
-    }
-
-    /**
-     * Send connection status notification
-     */
-    private async _notifyConnectionStatus(status: 'connecting' | 'connected' | 'disconnected' | 'error', details?: object): Promise<void> {
-
-        await this.server.sendLoggingMessage({
-            level: status === 'error' ? 'error' : 'info',
-            data: {
-                type: 'connection_status',
-                status,
-                fhirUrl: this.config.url,
-                timestamp: new Date().toISOString(),
-                ...details,
-            },
-        });
-    }
-
-    /**
-     * Send operation progress notification
-     */
-    private async _notifyProgress(operation: string, progress: number, details?: object): Promise<void> {
-
-        await this.server.sendLoggingMessage({
-            level: 'info',
-            data: {
-                type: 'operation_progress',
-                operation,
-                progress: Math.min(100, Math.max(0, progress)),
-                timestamp: new Date().toISOString(),
-                ...details,
-            },
-        });
-    }
-
-    /**
-     * Send error notification
-     */
-    private async _notifyError(error: string, context?: object): Promise<void> {
-
-        await this.server.sendLoggingMessage({
-            level: 'error',
-            data: {
-                type: 'error',
-                message: error,
-                context,
-                timestamp: new Date().toISOString(),
-            },
-        });
-    }
-
-    /**
-     * Send resource operation notification
-     */
-    private async _notifyResourceOperation(operation: 'create' | 'read' | 'update' | 'delete' | 'search', resourceType: string, details?: object): Promise<void> {
-
-        await this.server.sendLoggingMessage({
-            level: 'info',
-            data: {
-                type: 'resource_operation',
-                operation,
-                resourceType,
-                timestamp: new Date().toISOString(),
-                ...details,
-            },
-        });
-    }
-
-    /**
-     * Send validation notification
-     */
-    private async _notifyValidation(type: 'warning' | 'error', message: string, resourceType?: string, details?: object): Promise<void> {
-
-        await this.server.sendLoggingMessage({
-            level: type === 'error' ? 'error' : 'warning',
-            data: {
-                type: 'validation',
-                validationType: type,
-                message,
-                resourceType,
-                timestamp: new Date().toISOString(),
-                ...details,
-            },
-        });
     }
 
     /**s
@@ -2004,13 +1933,13 @@ GET /${resourceType}?date=ge2021-01-01`;
 
             // Check if this is a connection error
             if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT') {
-                void this._notifyConnectionStatus('error', {
+                void this.notificationManager.notifyConnectionStatus('error', {
                     message: `Connection failed: ${error.message}`,
                     errorCode: error.code,
                 });
             }
 
-            void this._notifyError(`Request failed: ${method} ${url}`, {
+            void this.notificationManager.notifyError(`Request failed: ${method} ${url}`, {
                 method,
                 url,
                 error: error instanceof Error ? error.message : String(error),
@@ -2051,21 +1980,12 @@ GET /${resourceType}?date=ge2021-01-01`;
         await this.server.connect(transport);
 
         // Send server startup notification
-        await this.server.sendLoggingMessage({
-            level: 'info',
-            data: {
-                type: 'server_startup',
-                message: 'FHIR MCP Server started successfully',
-                transport: transport.constructor.name,
-                fhirUrl: this.config.url,
-                timestamp: new Date().toISOString(),
-                capabilities: {
-                    tools: true,
-                    resources: true,
-                    notifications: true,
-                },
-            },
-        });
+        await this.notificationManager.notifyServerStartup({
+            tools: true,
+            resources: true,
+            notifications: true,
+            completions: true,
+        }, transport.constructor.name);
 
         this._sendFeedback({
             message: 'MCP server running on stdio)',
