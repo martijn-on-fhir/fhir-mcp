@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Server Notifications
-nav_order: 6
+nav_order: 5
 ---
 
 # Real-Time Server Notifications

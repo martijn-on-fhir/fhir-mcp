@@ -1,22 +1,74 @@
 title: FHIR MCP Server Documentation
-description: Comprehensive documentation for the FHIR MCP Server - Interactive healthcare workflows with Model Context Protocol
-author: FHIR MCP Contributors
-email: noreply@github.com
+description: >-
+  Comprehensive documentation for the FHIR MCP Server - a powerful Model Context Protocol
+  server for FHIR R4 with interactive elicitation, real-time notifications, validation,
+  and intelligent healthcare workflows.
+
+baseurl: "/fhir-mcp" # the subpath of your site, e.g. /blog
+url: "https://martijn-on-fhir.github.io" # the base hostname & protocol for your site
+
+# Repository information
+repository: martijn-on-fhir/fhir-mcp
+
+# Theme
+remote_theme: pmarsceill/just-the-docs
+
+# Navigation
+nav_external_links:
+  - title: GitHub Repository
+    url: https://github.com/martijn-on-fhir/fhir-mcp
+  - title: Latest Release
+    url: https://github.com/martijn-on-fhir/fhir-mcp/releases
+  - title: Issues & Support
+    url: https://github.com/martijn-on-fhir/fhir-mcp/issues
+
+# Just the Docs theme configuration
+color_scheme: light
+search_enabled: true
+search:
+  heading_level: 2
+  previews: 2
+  preview_words_before: 3
+  preview_words_after: 3
+  tokenizer_separator: /[\s/]+/
+  rel_url: true
+  button: false
+
+# Enable heading anchor links
+heading_anchors: true
+
+# Back to top link
+back_to_top: true
+back_to_top_text: "Back to top"
+
+# Footer content
+footer_content: "Copyright &copy; 2024 FHIR MCP Server. Distributed under the <a href=\"https://github.com/martijn-on-fhir/fhir-mcp/blob/main/LICENSE\">MIT License</a>."
 
 # Build settings
 markdown: kramdown
 highlighter: rouge
-theme: minima
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
 
-# GitHub Pages settings
-baseurl: "/fhir-mcp"
-url: "https://martijn-on-fhir.github.io"
-
-# Navigation
+# Plugins
 plugins:
   - jekyll-feed
   - jekyll-sitemap
   - jekyll-seo-tag
+
+# SEO settings
+lang: en-US
+author:
+  name: FHIR MCP Server Team
+  email: noreply@github.com
+
+# Social links (for SEO)
+social:
+  name: FHIR MCP Server
+  links:
+    - https://github.com/martijn-on-fhir/fhir-mcp
 
 # Exclude from processing
 exclude:
