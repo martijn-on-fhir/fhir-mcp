@@ -1,3 +1,10 @@
+## [1.10.2](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.10.1...v1.10.2) (2025-09-14)
+
+
+### Bug Fixes
+
+* resolve Jekyll bundler and GitHub Pages deployment issues ([ced2caa](https://github.com/martijn-on-fhir/fhir-mcp/commit/ced2caafef937a2247814267acaebfc50cb2de20))
+
 ## [1.10.1](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.10.0...v1.10.1) (2025-09-14)
 
 
