@@ -199,7 +199,7 @@ class FHIRMCPServer {
         });
 
         void this._notifyConnectionStatus('connected', {
-            message: `Successfully connected to FHIR server`,
+            message: 'Successfully connected to FHIR server',
             timeout: this.config.timeout || 30000,
         });
     }
@@ -1445,6 +1445,7 @@ GET /${resourceType}?date=ge2021-01-01`;
 
         // Note: Console output is disabled when running as MCP server to avoid interfering with stdio protocol
         // The feedback is returned as MCP tool response content instead
+        console.error(logMessage);
 
         return {
             content: [
@@ -1460,6 +1461,7 @@ GET /${resourceType}?date=ge2021-01-01`;
      * Send connection status notification
      */
     private async _notifyConnectionStatus(status: 'connecting' | 'connected' | 'disconnected' | 'error', details?: object): Promise<void> {
+
         await this.server.sendLoggingMessage({
             level: status === 'error' ? 'error' : 'info',
             data: {
