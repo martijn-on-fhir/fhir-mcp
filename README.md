@@ -762,7 +762,7 @@ The notification system provides unprecedented visibility into FHIR operations, 
 
 ### Project Status
 
-**Current Version:** 1.10.0
+**Current Version:** 1.10.1
 **FHIR Version:** R4
 **Node.js:** 16+ required
 **TypeScript:** 5.0+

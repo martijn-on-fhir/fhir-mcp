@@ -36,7 +36,7 @@ The FHIR MCP Server transforms static FHIR operations into intelligent, conversa
 - [API Reference](api-reference) - Complete tool and resource reference
 - [Troubleshooting](troubleshooting) - Common issues and solutions
 
-## 🚀 What's New in v1.10.0
+## 🚀 What's New in v1.10.1
 
 ✅ **Real-Time Server Notifications** - Comprehensive monitoring system for MCP Inspector with 6 notification types
 ✅ **Connection Status Monitoring** - Live FHIR server connectivity tracking with error detection

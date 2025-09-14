@@ -1,22 +1,54 @@
 title: FHIR MCP Server Documentation
-description: Comprehensive documentation for the FHIR MCP Server - Interactive healthcare workflows with Model Context Protocol
-author: FHIR MCP Contributors
-email: noreply@github.com
+description: >-
+  Comprehensive documentation for the FHIR MCP Server - a powerful Model Context Protocol
+  server for FHIR R4 with interactive elicitation, real-time notifications, validation,
+  and intelligent healthcare workflows.
+
+baseurl: "/fhir-mcp" # the subpath of your site, e.g. /blog
+url: "https://martijn-on-fhir.github.io" # the base hostname & protocol for your site
+
+# Repository information
+repository: martijn-on-fhir/fhir-mcp
+
+# Theme - using default GitHub Pages themes for compatibility
+theme: minima
+
+# Navigation links
+header_pages:
+  - index.md
+  - quick-start-guide.md
+  - server-notifications.md
+  - fhir-operations.md
+  - interactive-elicitation.md
+  - healthcare-workflows.md
+  - api-reference.md
+  - troubleshooting.md
 
 # Build settings
 markdown: kramdown
 highlighter: rouge
-theme: minima
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
 
-# GitHub Pages settings
-baseurl: "/fhir-mcp"
-url: "https://martijn-on-fhir.github.io"
-
-# Navigation
+# Plugins
 plugins:
   - jekyll-feed
   - jekyll-sitemap
   - jekyll-seo-tag
+
+# SEO settings
+lang: en-US
+author:
+  name: FHIR MCP Server Team
+  email: noreply@github.com
+
+# Social links (for SEO)
+social:
+  name: FHIR MCP Server
+  links:
+    - https://github.com/martijn-on-fhir/fhir-mcp
 
 # Exclude from processing
 exclude:
