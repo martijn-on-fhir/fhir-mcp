@@ -1614,8 +1614,7 @@ GET /${resourceType}?date=ge2021-01-01`;
                 return await this._search(result.processedArgs);
             }
 
-            throw new Error(`Unexpected elicitation result state: needsInput=${result.needsInput}, 
-            hasProcessedArgs=${!!result.processedArgs}, hasElicitationRequest=${!!result.elicitationRequest}`);
+            throw new Error(`Unexpected elicitation result state: needsInput=${result.needsInput}, hasProcessedArgs=${!!result.processedArgs}, hasElicitationRequest=${!!result.elicitationRequest}`);
 
         } catch (error) {
 
