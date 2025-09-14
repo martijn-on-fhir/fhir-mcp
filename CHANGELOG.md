@@ -1,3 +1,10 @@
+## [1.10.3](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.10.2...v1.10.3) (2025-09-14)
+
+
+### Bug Fixes
+
+* update FHIR URLs for consistency and add spacing to logging methods ([6145321](https://github.com/martijn-on-fhir/fhir-mcp/commit/61453210875e019ec46a85447df175ce3fb8cd60))
+
 ## [1.10.2](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.10.1...v1.10.2) (2025-09-14)
 
 

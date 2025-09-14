@@ -1225,7 +1225,7 @@ GET /${resourceType}?date=ge2021-01-01`;
     private async _validate(args: { resourceType: string; resource: any }): Promise<any> {
 
         const {resourceType, resource} = args;
-        const url = `fhir/${resourceType}/$validate`;
+        const url = 'fhir/$validate';
 
         void this._notifyResourceOperation('create', resourceType, {
             resourceId: resource.id || 'unknown',
@@ -1375,7 +1375,7 @@ GET /${resourceType}?date=ge2021-01-01`;
      */
     private async _getCapability(): Promise<any> {
 
-        const url = '/metadata';
+        const url = 'fhir/metadata';
 
         try {
             const response = await this._executeRequest(url, 'GET');
@@ -1478,6 +1478,7 @@ GET /${resourceType}?date=ge2021-01-01`;
      * Send operation progress notification
      */
     private async _notifyProgress(operation: string, progress: number, details?: object): Promise<void> {
+
         await this.server.sendLoggingMessage({
             level: 'info',
             data: {
@@ -1494,6 +1495,7 @@ GET /${resourceType}?date=ge2021-01-01`;
      * Send error notification
      */
     private async _notifyError(error: string, context?: object): Promise<void> {
+
         await this.server.sendLoggingMessage({
             level: 'error',
             data: {
@@ -1509,6 +1511,7 @@ GET /${resourceType}?date=ge2021-01-01`;
      * Send resource operation notification
      */
     private async _notifyResourceOperation(operation: 'create' | 'read' | 'update' | 'delete' | 'search', resourceType: string, details?: object): Promise<void> {
+
         await this.server.sendLoggingMessage({
             level: 'info',
             data: {
@@ -1525,6 +1528,7 @@ GET /${resourceType}?date=ge2021-01-01`;
      * Send validation notification
      */
     private async _notifyValidation(type: 'warning' | 'error', message: string, resourceType?: string, details?: object): Promise<void> {
+
         await this.server.sendLoggingMessage({
             level: type === 'error' ? 'error' : 'warning',
             data: {
@@ -1538,11 +1542,12 @@ GET /${resourceType}?date=ge2021-01-01`;
         });
     }
 
-    /**
+    /**s
      * Health check ping that returns server status
      * @returns Promise resolving to status OK wrapped in MCP content format
      */
     private async _ping(): Promise<object> {
+
         return {
             content: [
                 {
