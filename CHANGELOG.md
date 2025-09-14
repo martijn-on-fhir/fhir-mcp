@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.10.3...v1.11.0) (2025-09-14)
+
+
+### Features
+
+* refactor FHIR completion functionality into dedicated manager class ([750e37f](https://github.com/martijn-on-fhir/fhir-mcp/commit/750e37f20075b69cf3588d55d9c3416b161aee77))
+
 ## [1.10.3](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.10.2...v1.10.3) (2025-09-14)
 
 
