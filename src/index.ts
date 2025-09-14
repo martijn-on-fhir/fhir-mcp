@@ -4,6 +4,7 @@ import {Server} from '@modelcontextprotocol/sdk/server/index.js';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
     CallToolRequestSchema,
+    CompleteRequestSchema,
     ListResourcesRequestSchema,
     ListResourceTemplatesRequestSchema,
     ListRootsRequestSchema,
@@ -17,6 +18,7 @@ import {FHIRPromptManager} from './lib/prompts/prompt-manager.js';
 import {FHIRDocumentationProvider} from './lib/documentation/fhir-documentation-provider.js';
 import {ResourceTemplateManager} from './lib/resources/resource-template-manager.js';
 import {ElicitationToolHandlers} from './lib/elicitation/elicitation-tool-handlers.js';
+import {FHIRCompletionManager} from './lib/completions/fhir-completion-manager.js';
 import {Axios} from 'axios';
 
 /**
@@ -103,6 +105,16 @@ class FHIRMCPServer {
      */
     private elicitationHandlers: ElicitationToolHandlers;
 
+    /**
+     * An instance of `FHIRCompletionManager` responsible for providing intelligent
+     * auto-completion suggestions for FHIR resources, search parameters, and other
+     * FHIR-related inputs in the MCP server context.
+     *
+     * This manager enhances user experience by offering contextual completions
+     * for resource types, search parameters, status values, and code systems.
+     */
+    private completionManager: FHIRCompletionManager;
+
     constructor() {
 
         this.config = loadConfig();
@@ -110,6 +122,7 @@ class FHIRMCPServer {
         this.documentationProvider = new FHIRDocumentationProvider();
         this.templateManager = new ResourceTemplateManager();
         this.elicitationHandlers = new ElicitationToolHandlers(this.promptManager);
+        this.completionManager = new FHIRCompletionManager();
 
         this.server = new Server({
             name: 'fhir-mcp-server',
@@ -120,6 +133,7 @@ class FHIRMCPServer {
                 tools: {},
                 resources: {},
                 resourceTemplates: {},
+                completions: {},
                 roots: {
                     listChanged: true,
                 },
@@ -854,6 +868,10 @@ class FHIRMCPServer {
                 ],
             };
         });
+
+        this.server.setRequestHandler(CompleteRequestSchema, async (request) => {
+            return await this._handleCompletion(request.params);
+        });
     }
 
     /**
@@ -1243,11 +1261,14 @@ GET /${resourceType}?date=ge2021-01-01`;
             const warnings = issues.filter((issue: any) => issue.severity === 'warning');
 
             if (errors.length > 0) {
+
                 void this._notifyValidation('error', `Validation failed with ${errors.length} error(s)`, resourceType, {
                     errorCount: errors.length,
                     warningCount: warnings.length,
                 });
+
             } else if (warnings.length > 0) {
+
                 void this._notifyValidation('warning', `Validation passed with ${warnings.length} warning(s)`, resourceType, {
                     warningCount: warnings.length,
                 });
@@ -1921,6 +1942,15 @@ GET /${resourceType}?date=ge2021-01-01`;
                 },
             ],
         };
+    }
+
+    /**
+     * Handle completion requests for FHIR resources and parameters
+     * @param params Completion request parameters
+     * @returns Promise resolving to completion options
+     */
+    private async _handleCompletion(params: any): Promise<object> {
+        return await this.completionManager.handleCompletion(params);
     }
 
     /**

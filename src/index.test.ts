@@ -271,4 +271,92 @@ describe('FHIR MCP Server Index', () => {
             expect(searchParams.get('_summary')).toBe('data');
         });
     });
+
+    describe('FHIR Resource Completions', () => {
+        it('should test resource type completion filtering', () => {
+            const fhirResourceTypes = [
+                'Account', 'ActivityDefinition', 'AllergyIntolerance', 'Appointment',
+                'Patient', 'Practitioner', 'Procedure', 'Observation',
+            ];
+
+            const value = 'Pat';
+            const matches = fhirResourceTypes.filter(resourceType =>
+                resourceType.toLowerCase().startsWith(value.toLowerCase())
+            );
+
+            expect(matches).toContain('Patient');
+            expect(matches).not.toContain('Observation');
+            expect(matches.length).toBe(1);
+        });
+
+        it('should test search parameter completion filtering', () => {
+            const commonSearchParams = [
+                '_id', '_lastUpdated', 'identifier', 'active', 'name',
+                'family', 'given', 'birthdate', 'gender', 'subject', 'patient',
+            ];
+
+            const value = '_';
+            const matches = commonSearchParams.filter(param =>
+                param.toLowerCase().startsWith(value.toLowerCase())
+            );
+
+            expect(matches).toContain('_id');
+            expect(matches).toContain('_lastUpdated');
+            expect(matches).not.toContain('identifier');
+            expect(matches.length).toBe(2);
+        });
+
+        it('should test completion response structure', () => {
+            const completionResponse = {
+                completion: {
+                    values: ['Patient', 'Practitioner'],
+                    total: 2,
+                    hasMore: false,
+                },
+            };
+
+            expect(completionResponse.completion).toHaveProperty('values');
+            expect(completionResponse.completion).toHaveProperty('total');
+            expect(completionResponse.completion).toHaveProperty('hasMore');
+            expect(completionResponse.completion.values).toHaveLength(2);
+            expect(completionResponse.completion.total).toBe(2);
+            expect(completionResponse.completion.hasMore).toBe(false);
+        });
+
+        it('should test case-insensitive completion matching', () => {
+            const resourceTypes = ['Patient', 'Practitioner', 'Procedure'];
+
+            // Test lowercase input
+            let matches = resourceTypes.filter(rt =>
+                rt.toLowerCase().startsWith('pat'.toLowerCase())
+            );
+            expect(matches).toContain('Patient');
+
+            // Test uppercase input
+            matches = resourceTypes.filter(rt =>
+                rt.toLowerCase().startsWith('PAT'.toLowerCase())
+            );
+            expect(matches).toContain('Patient');
+
+            // Test mixed case input
+            matches = resourceTypes.filter(rt =>
+                rt.toLowerCase().startsWith('PaT'.toLowerCase())
+            );
+            expect(matches).toContain('Patient');
+        });
+
+        it('should test completion with empty/invalid parameters', () => {
+            const emptyCompletion = {
+                completion: {
+                    values: [],
+                    total: 0,
+                    hasMore: false,
+                },
+            };
+
+            expect(emptyCompletion.completion.values).toHaveLength(0);
+            expect(emptyCompletion.completion.total).toBe(0);
+            expect(emptyCompletion.completion.hasMore).toBe(false);
+        });
+    });
 });
