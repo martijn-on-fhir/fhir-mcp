@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.9.0...v1.9.1) (2025-09-14)
+
+
+### Bug Fixes
+
+* resolve JSON parsing error in MCP server stdio transport ([a109eac](https://github.com/martijn-on-fhir/fhir-mcp/commit/a109eace2d76541b67b9b74d7d7f2fa3639ea8e5))
+
 # [1.9.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.8.0...v1.9.0) (2025-09-14)
 
 
