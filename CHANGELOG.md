@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.8.0...v1.9.0) (2025-09-14)
+
+
+### Features
+
+* create comprehensive GitHub Pages documentation site ([592c370](https://github.com/martijn-on-fhir/fhir-mcp/commit/592c3707cd7145a909db53869c7282f288921b4d))
+
 # [1.8.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.7.0...v1.8.0) (2025-09-13)
 
 
