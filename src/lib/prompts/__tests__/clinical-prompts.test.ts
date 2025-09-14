@@ -310,7 +310,7 @@ describe('ClinicalPrompts', () => {
             // At least some prompts should reference FHIR R4
             const fhirReferences = prompts.filter(p =>
                 p.prompt.toLowerCase().includes('fhir') ||
-        p.tags.includes('fhir-r4'),
+        p.tags.includes('fhir-r4')
             );
 
             expect(fhirReferences.length).toBeGreaterThan(0);

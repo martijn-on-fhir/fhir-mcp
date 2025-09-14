@@ -24,7 +24,7 @@ describe('WorkflowPrompts', () => {
 
             // All prompts should have workflow-related tags
             const hasNonWorkflowPrompt = prompts.some(prompt =>
-                !prompt.tags.some(tag => ['workflow', 'admission', 'discharge', 'medication', 'diagnostic', 'care-coordination', 'emergency'].includes(tag)),
+                !prompt.tags.some(tag => ['workflow', 'admission', 'discharge', 'medication', 'diagnostic', 'care-coordination', 'emergency'].includes(tag))
             );
             expect(hasNonWorkflowPrompt).toBe(false);
         });

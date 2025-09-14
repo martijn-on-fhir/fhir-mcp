@@ -30,7 +30,7 @@ describe('ElicitationManager', () => {
                 context,
                 'birthDate',
                 'string',
-                true,
+                true
             );
 
             expect(request.prompt).toContain('birthDate');
@@ -50,7 +50,7 @@ describe('ElicitationManager', () => {
                 context,
                 'middleName',
                 'string',
-                false,
+                false
             );
 
             expect(request.prompt).toContain('middleName');
@@ -68,7 +68,7 @@ describe('ElicitationManager', () => {
                 context,
                 'active',
                 'boolean',
-                true,
+                true
             );
 
             expect(booleanRequest.validation?.type).toBe('boolean');
@@ -77,7 +77,7 @@ describe('ElicitationManager', () => {
                 context,
                 'value',
                 'number',
-                true,
+                true
             );
 
             expect(numberRequest.validation?.type).toBe('number');
@@ -95,7 +95,7 @@ describe('ElicitationManager', () => {
                 context,
                 'birthDate',
                 'string',
-                true,
+                true
             );
 
             expect(request.prompt).toContain('for Patient');
@@ -120,7 +120,7 @@ describe('ElicitationManager', () => {
             const request = manager.createDisambiguationElicitation(
                 context,
                 'patient',
-                options,
+                options
             );
 
             expect(request.prompt).toContain('Multiple patient options');
@@ -149,7 +149,7 @@ describe('ElicitationManager', () => {
             const request = manager.createDisambiguationElicitation(
                 context,
                 'patient',
-                patients,
+                patients
             );
 
             expect(request.prompt).toContain('Doe, John');
@@ -175,7 +175,7 @@ describe('ElicitationManager', () => {
             const request = manager.createDisambiguationElicitation(
                 context,
                 'practitioner',
-                practitioners,
+                practitioners
             );
 
             expect(request.prompt).toContain('Dr. Jane Smith');
@@ -192,7 +192,7 @@ describe('ElicitationManager', () => {
             const request = manager.createDisambiguationElicitation(
                 context,
                 'choice',
-                options,
+                options
             );
 
             expect(request.prompt).toContain('1. Option 1');
@@ -211,7 +211,7 @@ describe('ElicitationManager', () => {
             const request = manager.createDisambiguationElicitation(
                 context,
                 'choice',
-                options,
+                options
             );
 
             expect(request.validation?.minimum).toBe(1);
@@ -457,7 +457,7 @@ describe('ElicitationManager', () => {
             const request = manager.createWorkflowElicitation(
                 context,
                 'admissionType',
-                'Type of admission (emergency, elective, urgent)',
+                'Type of admission (emergency, elective, urgent)'
             );
 
             expect(request.prompt).toContain('admission');
@@ -476,7 +476,7 @@ describe('ElicitationManager', () => {
             const request = manager.createWorkflowElicitation(
                 context,
                 'parameter',
-                'Generic parameter description',
+                'Generic parameter description'
             );
 
             expect(request.prompt).toContain('healthcare workflow');
@@ -495,7 +495,7 @@ describe('ElicitationManager', () => {
             const request = manager.createWorkflowElicitation(
                 context,
                 'destination',
-                'Discharge destination',
+                'Discharge destination'
             );
 
             expect(request.examples).toContain('home');
@@ -514,7 +514,7 @@ describe('ElicitationManager', () => {
                 context,
                 'id',
                 'string',
-                true,
+                true
             );
 
             expect(request.validation?.type).toBe('string');
@@ -531,7 +531,7 @@ describe('ElicitationManager', () => {
                 context,
                 'birthDate',
                 'string',
-                true,
+                true
             );
 
             expect(request.validation?.pattern).toContain('\\d{4}-\\d{2}-\\d{2}');
@@ -547,7 +547,7 @@ describe('ElicitationManager', () => {
                 context,
                 'gender',
                 'string',
-                true,
+                true
             );
 
             expect(request.validation?.enum).toEqual(['male', 'female', 'other', 'unknown']);
@@ -563,7 +563,7 @@ describe('ElicitationManager', () => {
                 patientContext,
                 'status',
                 'string',
-                true,
+                true
             );
 
             expect(patientRequest.examples).toContain('active');
@@ -577,7 +577,7 @@ describe('ElicitationManager', () => {
                 observationContext,
                 'status',
                 'string',
-                true,
+                true
             );
 
             expect(observationRequest.examples).toContain('final');
@@ -602,7 +602,7 @@ describe('ElicitationManager', () => {
             const request = manager.createDisambiguationElicitation(
                 context,
                 'patient',
-                patients,
+                patients
             );
 
             expect(request.prompt).toContain('ID: patient-1');
@@ -626,7 +626,7 @@ describe('ElicitationManager', () => {
             const request = manager.createDisambiguationElicitation(
                 context,
                 'practitioner',
-                practitioners,
+                practitioners
             );
 
             expect(request.prompt).toContain('Dr. Jane Smith');
@@ -646,7 +646,7 @@ describe('ElicitationManager', () => {
             const request = manager.createDisambiguationElicitation(
                 context,
                 'option',
-                complexOptions,
+                complexOptions
             );
 
             expect(request.prompt).toContain('"id": 1');
@@ -704,7 +704,7 @@ describe('ElicitationManager', () => {
             const request = manager.createDisambiguationElicitation(
                 context,
                 'empty',
-                [],
+                []
             );
 
             expect(request.validation?.maximum).toBe(0);
@@ -721,7 +721,7 @@ describe('ElicitationManager', () => {
                 context,
                 'unknownField',
                 'unknownType',
-                true,
+                true
             );
 
             expect(request.validation?.type).toBe('unknownType');

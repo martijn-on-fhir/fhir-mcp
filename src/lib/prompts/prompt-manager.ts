@@ -65,14 +65,14 @@ export class FHIRPromptManager implements PromptProvider {
     public getPromptsByResourceType(resourceType: string): FHIRPrompt[] {
         return this.getPrompts().filter(prompt =>
             prompt.context?.resourceType === resourceType ||
-            prompt.tags.includes(resourceType.toLowerCase()),
+            prompt.tags.includes(resourceType.toLowerCase())
         );
     }
 
     public getClinicalContextPrompt(
         resourceType?: string,
         workflow?: string,
-        userType = 'clinical',
+        userType = 'clinical'
     ): string {
         const basePrompt = this.generatePrompt('fhir-clinical-expert');
         const contextPrompts: string[] = [basePrompt];
@@ -88,7 +88,7 @@ export class FHIRPromptManager implements PromptProvider {
         if (workflow) {
             const workflowPrompts = this.getPromptsByTag('workflow');
             const matchingWorkflow = workflowPrompts.find(p =>
-                p.id.includes(workflow.toLowerCase()),
+                p.id.includes(workflow.toLowerCase())
             );
             
             if (matchingWorkflow) {
