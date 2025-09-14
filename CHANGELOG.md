@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.10.0...v1.10.1) (2025-09-14)
+
+
+### Bug Fixes
+
+* log connection messages to stderr and adjust formatting ([76de9c1](https://github.com/martijn-on-fhir/fhir-mcp/commit/76de9c118cc1801cbdc0925d6362405d0c11a258))
+
 # [1.10.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.9.2...v1.10.0) (2025-09-14)
 
 
