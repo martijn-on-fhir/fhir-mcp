@@ -8,6 +8,35 @@ nav_order: 7
 
 Complete technical reference for all FHIR MCP Server tools, resources, and capabilities.
 
+## Server Notifications
+
+The FHIR MCP Server automatically sends real-time notifications via the MCP protocol's `sendLoggingMessage` method. These notifications appear in MCP Inspector's Server Notifications section.
+
+### Notification Format
+
+All notifications follow this structure:
+```json
+{
+  "level": "info" | "warning" | "error",
+  "data": {
+    "type": "notification_type",
+    "timestamp": "ISO-8601 timestamp",
+    // Additional type-specific fields
+  }
+}
+```
+
+### Notification Types
+
+- **`connection_status`**: FHIR server connection monitoring
+- **`operation_progress`**: Real-time progress updates (0-100%)
+- **`resource_operation`**: FHIR operation tracking (create, read, update, delete, search)
+- **`error`**: Error reporting with detailed context
+- **`validation`**: FHIR validation results and warnings
+- **`server_startup`**: Server initialization status
+
+For detailed notification schemas and examples, see [Server Notifications](server-notifications).
+
 ## Interactive FHIR Operations
 
 ### fhir_create_interactive

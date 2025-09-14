@@ -149,6 +149,10 @@ class FHIRMCPServer {
             level: 'debug',
         });
 
+        void this._notifyConnectionStatus('connecting', {
+            message: `Connecting to FHIR server at ${this.config.url}`,
+        });
+
         this.instance = new Axios({
             baseURL: this.config.url,
             headers: {
@@ -192,6 +196,11 @@ class FHIRMCPServer {
         this._sendFeedback({
             message: 'Axios instance created successfully',
             level: 'info',
+        });
+
+        void this._notifyConnectionStatus('connected', {
+            message: 'Successfully connected to FHIR server',
+            timeout: this.config.timeout || 30000,
         });
     }
 
@@ -1098,6 +1107,11 @@ GET /${resourceType}?date=ge2021-01-01`;
     private async _search(args: { resourceType: string; parameters?: Record<string, any> }): Promise<any> {
 
         const {resourceType, parameters = {}} = args;
+
+        void this._notifyResourceOperation('search', resourceType, {
+            parameters,
+            message: `Searching for ${resourceType} resources`,
+        });
         const searchParams = new URLSearchParams();
 
         Object.entries(parameters).forEach(([key, value]) => {
@@ -1107,7 +1121,20 @@ GET /${resourceType}?date=ge2021-01-01`;
         searchParams.append('_summary', 'data');
 
         const url = `fhir/${resourceType}?${searchParams.toString()}`;
+
+        void this._notifyProgress('search', 50, {
+            resourceType,
+            message: `Executing search query for ${resourceType}`,
+        });
+
         const response = await this._executeRequest(url, 'GET');
+
+        const resultCount = (response as any)?.entry?.length || 0;
+        void this._notifyProgress('search', 100, {
+            resourceType,
+            message: `Search completed: found ${resultCount} ${resourceType} resources`,
+            resultCount,
+        });
 
         return {
             content: [
@@ -1149,9 +1176,25 @@ GET /${resourceType}?date=ge2021-01-01`;
         const {resourceType, resource} = args;
         const url = `fhir/${resourceType}`;
 
+        void this._notifyResourceOperation('create', resourceType, {
+            resourceId: resource.id || 'new',
+            message: `Creating ${resourceType} resource`,
+        });
+
         try {
 
+            void this._notifyProgress('create', 50, {
+                resourceType,
+                message: `Submitting ${resourceType} to FHIR server`,
+            });
+
             const response = await this._executeRequest(url, 'POST', resource);
+
+            void this._notifyProgress('create', 100, {
+                resourceType,
+                message: `Successfully created ${resourceType} resource`,
+                resourceId: (response as any).id || 'unknown',
+            });
 
             return {
                 content: [
@@ -1162,6 +1205,11 @@ GET /${resourceType}?date=ge2021-01-01`;
                 ],
             };
         } catch (error) {
+
+            void this._notifyError(`Failed to create ${resourceType} resource`, {
+                resourceType,
+                error: error instanceof Error ? error.message : String(error),
+            });
 
             return {
                 content: [
@@ -1179,9 +1227,31 @@ GET /${resourceType}?date=ge2021-01-01`;
         const {resourceType, resource} = args;
         const url = `fhir/${resourceType}/$validate`;
 
+        void this._notifyResourceOperation('create', resourceType, {
+            resourceId: resource.id || 'unknown',
+            message: `Validating ${resourceType} resource`,
+            operation: 'validate',
+        });
+
         try {
 
             const response = await this._executeRequest(url, 'POST', resource);
+
+            // Check validation result and send appropriate notifications
+            const issues = (response as any)?.issue || [];
+            const errors = issues.filter((issue: any) => issue.severity === 'error');
+            const warnings = issues.filter((issue: any) => issue.severity === 'warning');
+
+            if (errors.length > 0) {
+                void this._notifyValidation('error', `Validation failed with ${errors.length} error(s)`, resourceType, {
+                    errorCount: errors.length,
+                    warningCount: warnings.length,
+                });
+            } else if (warnings.length > 0) {
+                void this._notifyValidation('warning', `Validation passed with ${warnings.length} warning(s)`, resourceType, {
+                    warningCount: warnings.length,
+                });
+            }
 
             return {
                 content: [
@@ -1373,21 +1443,9 @@ GET /${resourceType}?date=ge2021-01-01`;
             ? `${logPrefix} ${message}\nContext: ${JSON.stringify(context, null, 2)}`
             : `${logPrefix} ${message}`;
 
-        switch (level.toLowerCase()) {
-        case 'error':
-            console.error(logMessage);
-            break;
-        case 'warn':
-            console.warn(logMessage);
-            break;
-        case 'debug':
-            console.debug(logMessage);
-            break;
-        case 'info':
-        default:
-            console.info(logMessage);
-            break;
-        }
+        // Note: Console output is disabled when running as MCP server to avoid interfering with stdio protocol
+        // The feedback is returned as MCP tool response content instead
+        console.error(logMessage);
 
         return {
             content: [
@@ -1397,6 +1455,87 @@ GET /${resourceType}?date=ge2021-01-01`;
                 },
             ],
         };
+    }
+
+    /**
+     * Send connection status notification
+     */
+    private async _notifyConnectionStatus(status: 'connecting' | 'connected' | 'disconnected' | 'error', details?: object): Promise<void> {
+
+        await this.server.sendLoggingMessage({
+            level: status === 'error' ? 'error' : 'info',
+            data: {
+                type: 'connection_status',
+                status,
+                fhirUrl: this.config.url,
+                timestamp: new Date().toISOString(),
+                ...details,
+            },
+        });
+    }
+
+    /**
+     * Send operation progress notification
+     */
+    private async _notifyProgress(operation: string, progress: number, details?: object): Promise<void> {
+        await this.server.sendLoggingMessage({
+            level: 'info',
+            data: {
+                type: 'operation_progress',
+                operation,
+                progress: Math.min(100, Math.max(0, progress)),
+                timestamp: new Date().toISOString(),
+                ...details,
+            },
+        });
+    }
+
+    /**
+     * Send error notification
+     */
+    private async _notifyError(error: string, context?: object): Promise<void> {
+        await this.server.sendLoggingMessage({
+            level: 'error',
+            data: {
+                type: 'error',
+                message: error,
+                context,
+                timestamp: new Date().toISOString(),
+            },
+        });
+    }
+
+    /**
+     * Send resource operation notification
+     */
+    private async _notifyResourceOperation(operation: 'create' | 'read' | 'update' | 'delete' | 'search', resourceType: string, details?: object): Promise<void> {
+        await this.server.sendLoggingMessage({
+            level: 'info',
+            data: {
+                type: 'resource_operation',
+                operation,
+                resourceType,
+                timestamp: new Date().toISOString(),
+                ...details,
+            },
+        });
+    }
+
+    /**
+     * Send validation notification
+     */
+    private async _notifyValidation(type: 'warning' | 'error', message: string, resourceType?: string, details?: object): Promise<void> {
+        await this.server.sendLoggingMessage({
+            level: type === 'error' ? 'error' : 'warning',
+            data: {
+                type: 'validation',
+                validationType: type,
+                message,
+                resourceType,
+                timestamp: new Date().toISOString(),
+                ...details,
+            },
+        });
     }
 
     /**
@@ -1614,8 +1753,7 @@ GET /${resourceType}?date=ge2021-01-01`;
                 return await this._search(result.processedArgs);
             }
 
-            throw new Error(`Unexpected elicitation result state: needsInput=${result.needsInput}, 
-            hasProcessedArgs=${!!result.processedArgs}, hasElicitationRequest=${!!result.elicitationRequest}`);
+            throw new Error(`Unexpected elicitation result state: needsInput=${result.needsInput}, hasProcessedArgs=${!!result.processedArgs}, hasElicitationRequest=${!!result.elicitationRequest}`);
 
         } catch (error) {
 
@@ -1829,6 +1967,22 @@ GET /${resourceType}?date=ge2021-01-01`;
 
         }).catch(async (error) => {
 
+            // Check if this is a connection error
+            if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT') {
+                void this._notifyConnectionStatus('error', {
+                    message: `Connection failed: ${error.message}`,
+                    errorCode: error.code,
+                });
+            }
+
+            void this._notifyError(`Request failed: ${method} ${url}`, {
+                method,
+                url,
+                error: error instanceof Error ? error.message : String(error),
+                errorCode: error.code,
+                statusCode: error.response?.status,
+            });
+
             this._sendFeedback({
                 message: `Error executing request: ${error instanceof Error ? error.message : String(error)}`,
                 level: 'error',
@@ -1861,6 +2015,23 @@ GET /${resourceType}?date=ge2021-01-01`;
         const transport = new StdioServerTransport();
         await this.server.connect(transport);
 
+        // Send server startup notification
+        await this.server.sendLoggingMessage({
+            level: 'info',
+            data: {
+                type: 'server_startup',
+                message: 'FHIR MCP Server started successfully',
+                transport: transport.constructor.name,
+                fhirUrl: this.config.url,
+                timestamp: new Date().toISOString(),
+                capabilities: {
+                    tools: true,
+                    resources: true,
+                    notifications: true,
+                },
+            },
+        });
+
         this._sendFeedback({
             message: 'MCP server running on stdio)',
             level: 'info',
@@ -1888,13 +2059,8 @@ async function main(): Promise<void> {
 
     } catch (error) {
 
-        console.error('[MAIN] Error details:', {
-            message: `Error starting MCP server: ${error instanceof Error ? error.message : String(error)}`,
-            level: 'error',
-            context: {
-                error,
-            },
-        });
+        // Error starting server - use stderr to avoid corrupting MCP stdio protocol
+        process.stderr.write(`Error starting MCP server: ${error instanceof Error ? error.message : String(error)}\n`);
 
         process.exit(1);
     }

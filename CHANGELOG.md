@@ -1,3 +1,31 @@
+## [1.10.1](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.10.0...v1.10.1) (2025-09-14)
+
+
+### Bug Fixes
+
+* log connection messages to stderr and adjust formatting ([76de9c1](https://github.com/martijn-on-fhir/fhir-mcp/commit/76de9c118cc1801cbdc0925d6362405d0c11a258))
+
+# [1.10.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.9.2...v1.10.0) (2025-09-14)
+
+
+### Features
+
+* implement comprehensive server notifications for MCP Inspector ([3f614df](https://github.com/martijn-on-fhir/fhir-mcp/commit/3f614df2ca98398c8207a7b74f40b93ec30b46e7))
+
+## [1.9.2](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.9.1...v1.9.2) (2025-09-14)
+
+
+### Bug Fixes
+
+* disable console output to prevent MCP stdio protocol corruption ([2f4f807](https://github.com/martijn-on-fhir/fhir-mcp/commit/2f4f8073727e533f363b4212dd549fd98064bc19))
+
+## [1.9.1](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.9.0...v1.9.1) (2025-09-14)
+
+
+### Bug Fixes
+
+* resolve JSON parsing error in MCP server stdio transport ([a109eac](https://github.com/martijn-on-fhir/fhir-mcp/commit/a109eace2d76541b67b9b74d7d7f2fa3639ea8e5))
+
 # [1.9.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.8.0...v1.9.0) (2025-09-14)
 
 
