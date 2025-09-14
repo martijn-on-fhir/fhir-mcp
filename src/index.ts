@@ -1373,21 +1373,8 @@ GET /${resourceType}?date=ge2021-01-01`;
             ? `${logPrefix} ${message}\nContext: ${JSON.stringify(context, null, 2)}`
             : `${logPrefix} ${message}`;
 
-        switch (level.toLowerCase()) {
-        case 'error':
-            console.error(logMessage);
-            break;
-        case 'warn':
-            console.warn(logMessage);
-            break;
-        case 'debug':
-            console.debug(logMessage);
-            break;
-        case 'info':
-        default:
-            console.info(logMessage);
-            break;
-        }
+        // Note: Console output is disabled when running as MCP server to avoid interfering with stdio protocol
+        // The feedback is returned as MCP tool response content instead
 
         return {
             content: [
@@ -1887,13 +1874,8 @@ async function main(): Promise<void> {
 
     } catch (error) {
 
-        console.error('[MAIN] Error details:', {
-            message: `Error starting MCP server: ${error instanceof Error ? error.message : String(error)}`,
-            level: 'error',
-            context: {
-                error,
-            },
-        });
+        // Error starting server - use stderr to avoid corrupting MCP stdio protocol
+        process.stderr.write(`Error starting MCP server: ${error instanceof Error ? error.message : String(error)}\n`);
 
         process.exit(1);
     }
