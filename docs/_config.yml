@@ -1,0 +1,49 @@
+title: FHIR MCP Server Documentation
+description: Comprehensive documentation for the FHIR MCP Server - Interactive healthcare workflows with Model Context Protocol
+author: FHIR MCP Contributors
+email: noreply@github.com
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# GitHub Pages settings
+baseurl: "/fhir-mcp"
+url: "https://martijn-on-fhir.github.io"
+
+# Navigation
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - .bundle
+  - .sass-cache
+  - .jekyll-cache
+  - .jekyll-metadata
+
+# Collections for better organization
+collections:
+  wiki:
+    output: true
+    permalink: /:collection/:name/
+
+# Default layouts
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "page"
+  - scope:
+      path: ""
+      type: "wiki"
+    values:
+      layout: "page"
