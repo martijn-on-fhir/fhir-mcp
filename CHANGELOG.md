@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.9.2...v1.10.0) (2025-09-14)
+
+
+### Features
+
+* implement comprehensive server notifications for MCP Inspector ([3f614df](https://github.com/martijn-on-fhir/fhir-mcp/commit/3f614df2ca98398c8207a7b74f40b93ec30b46e7))
+
 ## [1.9.2](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.9.1...v1.9.2) (2025-09-14)
 
 
