@@ -1,6 +1,6 @@
 # FHIR MCP Server
 
-A comprehensive MCP (Model Context Protocol) server for FHIR R4 with validation, narrative generation, intelligent prompts, and complete resource management capabilities.
+A comprehensive MCP (Model Context Protocol) server for FHIR R4 with AI-powered clinical insights, intelligent validation explanations, enhanced narrative generation, and complete resource management capabilities.
 
 ## Configuration
 
@@ -69,8 +69,15 @@ npm start https://your-fhir-server.com/fhir
 - `elicit_input`: Request specific user input with healthcare context and validation
 
 ### Validation & Quality
-- `fhir_validate`: Validate FHIR resources against R4 specification
-- `fhir_generate_narrative`: Generate human-readable narratives for resources
+- `fhir_validate`: Validate FHIR resources against R4 specification with AI-powered error explanations
+- `fhir_generate_narrative`: Generate AI-enhanced human-readable narratives for resources
+
+### AI-Powered Clinical Tools (MCP Sampling)
+- `fhir_clinical_insights`: Generate AI-powered clinical insights and analysis from patient data
+  - Clinical summaries and overviews
+  - Care gap identification
+  - Risk assessments and prioritization
+  - Next-step recommendations
 
 ### AI-Powered Prompts
 - `fhir_list_prompts`: List available contextual prompts by tag or resource type
@@ -270,6 +277,91 @@ The server includes a comprehensive FHIR R4 documentation provider that gives Cl
 ✅ **Search Mastery**: Advanced search capabilities with proper parameter usage
 ✅ **Terminology Awareness**: Code systems, value sets, and binding requirements
 ✅ **Implementation Support**: Best practices for FHIR API development and integration
+
+## AI-Powered Clinical Intelligence (MCP Sampling)
+
+The FHIR MCP Server integrates **MCP Sampling** to provide sophisticated AI-powered clinical intelligence while maintaining client control over model access and selection.
+
+### 🧠 **AI-Enhanced Features**
+
+#### **1. Intelligent Validation Explanations**
+Transform technical FHIR validation errors into actionable guidance:
+
+```
+❌ Traditional: "Element 'Patient.name': minimum required = 1, but only found 0"
+✅ AI-Enhanced: "The Patient resource requires at least one name. Add a name with at least a family name or given name. For example: {'family': 'Smith'} or {'given': ['John']}. This ensures the patient can be properly identified in clinical workflows."
+```
+
+**Features:**
+- Plain English explanations of validation errors
+- Specific fix suggestions with examples
+- Clinical context for why validation rules exist
+- Graceful fallback to standard errors when AI unavailable
+
+#### **2. Enhanced Narrative Generation**
+AI-powered clinical narratives with multiple styles:
+
+```
+🏥 Clinical Style: "Patient John Doe, DOB 1985-06-15, presents with elevated blood pressure readings (140/90 mmHg) recorded on 2024-01-15. Clinical assessment indicates hypertension requiring monitoring and potential intervention."
+
+👥 Patient-Friendly: "This is John Doe, born June 15, 1985. His recent blood pressure reading was higher than normal at 140/90. This means his blood pressure needs to be watched and may need treatment."
+
+🔧 Technical: "Patient resource (ID: patient-123) with HumanName elements and Observation references. Blood pressure Observation uses LOINC code 85354-9 with Quantity value and mmHg UCUM unit."
+```
+
+**Features:**
+- Three narrative styles: clinical, patient-friendly, technical
+- Clinical context and relationships highlighted
+- FHIR compliance maintained in generated narratives
+- Fallback to client-side generation when AI unavailable
+
+#### **3. Clinical Decision Support**
+AI-powered insights and analysis from patient data:
+
+```
+📊 Clinical Summary: "Jane Smith shows well-controlled diabetes with recent HbA1c of 6.8%. Blood pressure trending upward (current: 145/92). Medication adherence appears good based on prescription fills."
+
+🔍 Care Gaps: "Missing: Annual diabetic eye exam (last: 2022), Foot examination (overdue by 4 months), Lipid panel (last: 8 months ago)."
+
+⚠️ Risk Assessment: "Moderate cardiovascular risk due to diabetes + hypertension combination. Blood pressure elevation trend warrants attention."
+
+📋 Next Steps: "1. Schedule ophthalmology referral for diabetic screening, 2. Consider ACE inhibitor adjustment for BP control, 3. Order lipid panel and HbA1c follow-up."
+```
+
+**Analysis Types:**
+- **Clinical Summary**: Comprehensive overview of patient status
+- **Care Gaps**: Identification of missing documentation or overdue care
+- **Risk Assessment**: Clinical risk stratification and priorities
+- **Next Steps**: Evidence-based recommendations for follow-up
+
+### 🔒 **Privacy & Security**
+
+✅ **Client Control**: LLM remains with client, server never has direct model access
+✅ **Permission Respect**: Honors client model selection and usage policies
+✅ **Graceful Degradation**: All features work with or without sampling support
+✅ **Clinical Boundaries**: Appropriate disclaimers and scope limitations
+✅ **Data Privacy**: No patient data sent to external AI services
+
+### 🚀 **Architecture Benefits**
+
+- **Zero Infrastructure**: No AI model hosting or API keys required on server
+- **Cost Efficiency**: Uses client's existing LLM quota and permissions
+- **Scalability**: Server remains lightweight while gaining AI capabilities
+- **Flexibility**: Works with any MCP-compatible AI client and model
+- **Reliability**: Robust fallback handling ensures consistent functionality
+
+### 📋 **Usage Examples**
+
+```bash
+# Validate with AI explanations
+fhir_validate --resourceType Patient --resource {...}
+
+# Generate AI-enhanced narratives
+fhir_generate_narrative --resourceType Patient --resource {...} --style clinical
+
+# Get clinical insights
+fhir_clinical_insights --patientData {...} --analysisType summary
+```
 
 The documentation system is powered by the `FHIRDocumentationProvider` class, ensuring maintainable and up-to-date FHIR knowledge.
 
@@ -952,9 +1044,10 @@ The notification system provides unprecedented visibility into FHIR operations, 
 ✅ **Core FHIR Operations** - Full CRUD operations with validation
 ✅ **FHIR Auto-Completion System** - Intelligent completion for resource types, search parameters, status values, and code systems with MCP specification compliance
 ✅ **Interactive Elicitation System** - Guided user input collection with healthcare context and validation
+✅ **AI-Powered Clinical Insights** - MCP sampling integration for intelligent clinical analysis, care gap identification, and decision support
 ✅ **Real-Time Notifications** - Modular notification system with dedicated FHIRNotificationManager class providing 12 notification methods for comprehensive monitoring
-✅ **Resource Validation** - Complete R4 specification compliance checking
-✅ **Narrative Generation** - Human-readable resource descriptions
+✅ **Intelligent Validation** - Complete R4 specification compliance checking with AI-powered error explanations
+✅ **Enhanced Narrative Generation** - AI-enhanced human-readable resource descriptions with multiple style options
 ✅ **Comprehensive FHIR Documentation** - Built-in R4 specification, resource types, data types, search, validation, and terminology guidance
 ✅ **MCP Resource Templates** - 7 parameterized template categories for discoverable, dynamic resource access
 ✅ **MCP Roots** - 5 specialized file system roots for FHIR development assets (Implementation Guides, test data, configuration, terminology, profiles)
