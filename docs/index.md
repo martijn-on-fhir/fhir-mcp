@@ -10,12 +10,15 @@ Welcome to the comprehensive documentation for the **FHIR MCP Server** - a power
 
 ## 🏥 What is FHIR MCP Server?
 
-The FHIR MCP Server transforms static FHIR operations into intelligent, conversational healthcare experiences. It provides:
+The FHIR MCP Server transforms static FHIR operations into intelligent, AI-powered healthcare experiences. It provides:
 
+- **AI-Powered Clinical Intelligence**: MCP sampling integration for smart validation explanations, enhanced narratives, and clinical insights
 - **FHIR Auto-Completion**: Intelligent completion for resource types, search parameters, status values, and code systems
 - **Interactive Elicitation**: Guided user input collection with healthcare context
 - **Real-Time Notifications**: Type-safe notification system with FHIRNotificationManager for comprehensive server monitoring
-- **Smart Validation**: FHIR-specific patterns and clinical data validation
+- **Smart Validation**: FHIR-specific patterns with AI-powered error explanations
+- **Enhanced Narrative Generation**: AI-enhanced clinical narratives with multiple style options
+- **Clinical Decision Support**: AI-powered insights, care gap identification, and risk assessments
 - **Patient Disambiguation**: Intelligent handling of multiple patient matches
 - **Comprehensive Documentation**: Built-in FHIR R4 specification access
 - **AI-Powered Prompts**: 50+ contextual healthcare workflow prompts
@@ -28,6 +31,7 @@ The FHIR MCP Server transforms static FHIR operations into intelligent, conversa
 - [Installation](installation) - Detailed installation instructions
 
 ### Core Features
+- [AI Clinical Intelligence](ai-clinical-intelligence) - AI-powered validation explanations, enhanced narratives, and clinical insights
 - [FHIR Operations](fhir-operations) - Complete CRUD operations reference
 - [FHIR Auto-Completion](auto-completion) - Intelligent completion system for resource types and parameters
 - [Server Notifications](server-notifications) - Real-time monitoring and progress tracking
@@ -40,6 +44,7 @@ The FHIR MCP Server transforms static FHIR operations into intelligent, conversa
 
 ## 🚀 What's New in v1.10.3
 
+✅ **AI-Powered Clinical Intelligence** - MCP sampling integration with intelligent validation explanations, enhanced narratives, and clinical decision support
 ✅ **FHIR Auto-Completion System** - Intelligent completion for resource types, search parameters, status values, and code systems with MCP specification compliance
 ✅ **Real-Time Server Notifications** - Type-safe FHIRNotificationManager with 12 notification methods for comprehensive monitoring
 ✅ **Connection Status Monitoring** - Live FHIR server connectivity tracking with error detection

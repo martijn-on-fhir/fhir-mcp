@@ -361,6 +361,125 @@ Accepts: `true/false`, `yes/no`, `1/0` (case insensitive)
 }
 ```
 
+## AI-Powered Clinical Tools (MCP Sampling)
+
+These tools leverage MCP Sampling to provide AI-enhanced FHIR capabilities while maintaining client control over model access.
+
+### fhir_validate (Enhanced)
+Validate FHIR resources with AI-powered error explanations.
+
+**Input Schema:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "resourceType": {
+      "type": "string",
+      "description": "FHIR resource type (e.g., Patient, Observation)"
+    },
+    "resource": {
+      "type": "object",
+      "description": "Complete FHIR resource JSON object to validate"
+    }
+  },
+  "required": ["resourceType", "resource"]
+}
+```
+
+**Enhanced Response:**
+- **With AI**: Plain English explanations of validation errors with fix suggestions
+- **Without AI**: Standard FHIR validation response with technical error messages
+- **Fallback**: Graceful degradation when sampling unavailable
+
+### fhir_generate_narrative (Enhanced)
+Generate AI-enhanced human-readable narratives for FHIR resources.
+
+**Input Schema:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "resourceType": {
+      "type": "string",
+      "description": "FHIR resource type (e.g., Patient, Observation)"
+    },
+    "resource": {
+      "type": "object",
+      "description": "Complete FHIR resource JSON object to generate narrative for"
+    },
+    "style": {
+      "type": "string",
+      "enum": ["clinical", "patient-friendly", "technical"],
+      "description": "Narrative style: clinical (medical professionals), patient-friendly (conversational), technical (developers)"
+    }
+  },
+  "required": ["resourceType", "resource"]
+}
+```
+
+**Enhanced Response:**
+- **With AI**: Rich clinical narratives tailored to the specified style
+- **Without AI**: Basic client-side generated narratives
+- **Fallback**: Standard narrative generation when sampling unavailable
+
+### fhir_clinical_insights
+Generate AI-powered clinical insights and analysis from patient data.
+
+**Input Schema:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "patientData": {
+      "type": "object",
+      "description": "Patient and related clinical data (Patient resource plus Observations, Conditions, etc.)"
+    },
+    "analysisType": {
+      "type": "string",
+      "enum": ["summary", "care-gaps", "risk-assessment", "next-steps"],
+      "description": "Type of clinical analysis to perform"
+    }
+  },
+  "required": ["patientData"]
+}
+```
+
+**Analysis Types:**
+- **summary**: Comprehensive clinical overview of patient status
+- **care-gaps**: Identification of missing documentation or overdue care
+- **risk-assessment**: Clinical risk stratification and priorities
+- **next-steps**: Evidence-based recommendations for follow-up actions
+
+**Response Format:**
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "# AI-Powered Clinical Insights\n\n## Analysis Type: Summary\n\n[AI-generated insights]\n\n## Data Analyzed\n\n```json\n[patient data]\n```\n\n---\n\n*⚠️ These insights are for informational purposes only and should not replace clinical judgment.*"
+    }
+  ]
+}
+```
+
+### Sampling Architecture
+
+All AI-powered tools follow this pattern:
+
+1. **Client Control**: MCP client maintains control over LLM access
+2. **Graceful Fallback**: Tools work with or without AI capabilities
+3. **Privacy Preservation**: No data sent to external AI services
+4. **Error Resilience**: Sampling failures don't break core functionality
+
+**Sampling Request Flow:**
+```
+Server → Client: sampling/createMessage request
+Client → LLM: Process with user's model
+LLM → Client: AI response
+Client → Server: Formatted response
+Server → User: Enhanced result
+```
+
 ## Error Codes Reference
 
 ### HTTP Status Codes

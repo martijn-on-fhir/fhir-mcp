@@ -10,6 +10,7 @@ import {
     ListRootsRequestSchema,
     ListToolsRequestSchema,
     ReadResourceRequestSchema,
+    CreateMessageRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import {loadConfigWithFile as loadConfig} from './lib/configuration/config-loader.js';
 import {ServerConfig} from './lib/configuration/config.js';
@@ -20,6 +21,7 @@ import {ResourceTemplateManager} from './lib/resources/resource-template-manager
 import {ElicitationToolHandlers} from './lib/elicitation/elicitation-tool-handlers.js';
 import {FHIRCompletionManager} from './lib/completions/fhir-completion-manager.js';
 import {FHIRNotificationManager} from './lib/notifications/fhir-notification-manager.js';
+import {FHIRSamplingManager} from './lib/sampling/fhir-sampling-manager.js';
 import {Axios} from 'axios';
 
 /**
@@ -126,6 +128,16 @@ class FHIRMCPServer {
      */
     private notificationManager: FHIRNotificationManager;
 
+    /**
+     * An instance of `FHIRSamplingManager` responsible for managing AI-powered
+     * LLM sampling requests including validation explanations, narrative enhancement,
+     * clinical insights, and intelligent resource generation.
+     *
+     * This manager enables sophisticated AI features while maintaining client
+     * control over model access, selection, and permissions.
+     */
+    private samplingManager: FHIRSamplingManager;
+
     constructor() {
 
         this.config = loadConfig();
@@ -145,6 +157,7 @@ class FHIRMCPServer {
                 resources: {},
                 resourceTemplates: {},
                 completions: {},
+                sampling: {},
                 roots: {
                     listChanged: true,
                 },
@@ -152,8 +165,9 @@ class FHIRMCPServer {
         }
         );
 
-        // Initialize notification manager after server is created
+        // Initialize notification and sampling managers after server is created
         this.notificationManager = new FHIRNotificationManager(this.server, this.config.url);
+        this.samplingManager = new FHIRSamplingManager(this.server);
 
         this._setupHandlers();
         this._setUpAxios();
@@ -207,7 +221,7 @@ class FHIRMCPServer {
                 return data;
             }],
             transformResponse: [(data): any => {
-                
+
                 this._sendFeedback({
                     message: '[AXIOS_SETUP] Transform response',
                     level: 'debug',
@@ -216,7 +230,7 @@ class FHIRMCPServer {
                         dataLength: data?.length || 'N/A',
                     },
                 });
-     
+
                 return data; // Let our _executeRequest handle JSON parsing
             }],
         });
@@ -381,6 +395,25 @@ class FHIRMCPServer {
                                 },
                             },
                             required: ['resourceType', 'resource'],
+                        },
+                    },
+                    {
+                        name: 'fhir_clinical_insights',
+                        description: 'Generate AI-powered clinical insights and analysis from FHIR patient data. Provides evidence-based clinical summaries, care gap identification, risk assessments, and next-step recommendations while maintaining appropriate clinical boundaries.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                patientData: {
+                                    type: 'object',
+                                    description: 'Patient and related clinical data (Patient resource plus Observations, Conditions, etc.)',
+                                },
+                                analysisType: {
+                                    type: 'string',
+                                    enum: ['summary', 'care-gaps', 'risk-assessment', 'next-steps'],
+                                    description: 'Type of clinical analysis: summary (clinical overview), care-gaps (missing documentation), risk-assessment (clinical risks), next-steps (follow-up actions). Defaults to summary.',
+                                },
+                            },
+                            required: ['patientData'],
                         },
                     },
                     {
@@ -629,6 +662,12 @@ class FHIRMCPServer {
                             resourceType: string;
                             resource: any;
                             style?: string
+                        });
+
+                case 'fhir_clinical_insights':
+                    return await this._generateClinicalInsights(args as {
+                            patientData: object;
+                            analysisType?: string
                         });
 
                 case 'fhir_capability':
@@ -1281,18 +1320,56 @@ GET /${resourceType}?date=ge2021-01-01`;
                     warningCount: warnings.length,
                 });
 
+                // Generate AI-powered explanations for validation errors
+                try {
+                    const errorMessages = errors.map((error: any) => error.diagnostics || error.details?.text || 'Unknown validation error').join('; ');
+                    const explanation = await this.samplingManager.explainValidationError(
+                        errorMessages,
+                        resourceType,
+                        {totalErrors: errors.length, totalWarnings: warnings.length}
+                    );
+
+                    return {
+                        content: [
+                            {
+                                type: 'text',
+                                text: `# FHIR Validation Results\n\n## AI-Powered Explanation\n\n${explanation}\n\n## Raw Validation Response\n\n\`\`\`json\n${JSON.stringify(response, null, 2)}\n\`\`\``,
+                            },
+                        ],
+                    };
+                } catch (samplingError) {
+                    // Fallback to standard response if sampling fails
+                    return {
+                        content: [
+                            {
+                                type: 'text',
+                                text: `# FHIR Validation Results\n\n⚠️ **Validation Failed** with ${errors.length} error(s) and ${warnings.length} warning(s)\n\n*AI explanation unavailable: ${samplingError instanceof Error ? samplingError.message : String(samplingError)}*\n\n## Raw Validation Response\n\n\`\`\`json\n${JSON.stringify(response, null, 2)}\n\`\`\``,
+                            },
+                        ],
+                    };
+                }
+
             } else if (warnings.length > 0) {
 
                 void this.notificationManager.notifyValidation('warning', `Validation passed with ${warnings.length} warning(s)`, resourceType, {
                     warningCount: warnings.length,
                 });
+
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `# FHIR Validation Results\n\n✅ **Validation Passed** with ${warnings.length} warning(s)\n\n## Raw Validation Response\n\n\`\`\`json\n${JSON.stringify(response, null, 2)}\n\`\`\``,
+                        },
+                    ],
+                };
             }
 
             return {
                 content: [
                     {
                         type: 'text',
-                        text: JSON.stringify(response, null, 2),
+                        text: `# FHIR Validation Results\n\n✅ **Validation Successful** - No errors or warnings found\n\n## Raw Validation Response\n\n\`\`\`json\n${JSON.stringify(response, null, 2)}\n\`\`\``,
                     },
                 ],
             };
@@ -1314,26 +1391,66 @@ GET /${resourceType}?date=ge2021-01-01`;
         const {resourceType, resource, style = 'clinical'} = args;
 
         try {
-            // Generate narrative client-side based on resource type
-            const narrativeHtml = Narrative.generate(resourceType, resource, {style: style as NarrativeStyle});
+            // Try AI-enhanced narrative generation first
+            try {
+                const aiNarrative = await this.samplingManager.enhanceNarrative(
+                    resource,
+                    resourceType,
+                    style as 'clinical' | 'patient-friendly' | 'technical'
+                );
 
-            // Create updated resource with narrative
-            const resourceWithNarrative = {
-                ...resource,
-                text: {
-                    status: 'generated',
-                    div: narrativeHtml,
-                },
-            };
-
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: JSON.stringify(resourceWithNarrative, null, 2),
+                // Create updated resource with AI-enhanced narrative
+                const resourceWithAINarrative = {
+                    ...resource,
+                    text: {
+                        status: 'generated',
+                        div: `<div xmlns="http://www.w3.org/1999/xhtml">${aiNarrative}</div>`,
                     },
-                ],
-            };
+                    _narrativeGeneration: {
+                        method: 'ai-enhanced',
+                        style: style,
+                        generatedAt: new Date().toISOString(),
+                    },
+                };
+
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `# AI-Enhanced FHIR Narrative\n\n## Enhanced Narrative\n\n${aiNarrative}\n\n## Complete Resource with Narrative\n\n\`\`\`json\n${JSON.stringify(resourceWithAINarrative, null, 2)}\n\`\`\``,
+                        },
+                    ],
+                };
+
+            } catch (aiError) {
+                // Fallback to client-side narrative generation
+                const narrativeHtml = Narrative.generate(resourceType, resource, {style: style as NarrativeStyle});
+
+                // Create updated resource with client-side narrative
+                const resourceWithNarrative = {
+                    ...resource,
+                    text: {
+                        status: 'generated',
+                        div: narrativeHtml,
+                    },
+                    _narrativeGeneration: {
+                        method: 'client-side',
+                        style: style,
+                        generatedAt: new Date().toISOString(),
+                        aiFailureReason: aiError instanceof Error ? aiError.message : String(aiError),
+                    },
+                };
+
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `# FHIR Narrative Generation\n\n## Client-Side Generated Narrative\n\n*AI enhancement unavailable: ${aiError instanceof Error ? aiError.message : String(aiError)}*\n\n## Complete Resource with Narrative\n\n\`\`\`json\n${JSON.stringify(resourceWithNarrative, null, 2)}\n\`\`\``,
+                        },
+                    ],
+                };
+            }
+
         } catch (error) {
 
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -1342,10 +1459,47 @@ GET /${resourceType}?date=ge2021-01-01`;
                 content: [
                     {
                         type: 'text',
-                        text: JSON.stringify({
-                            error: `Client-side narrative generation failed: ${errorMessage}`,
-                            originalResource: resource,
-                        }, null, 2),
+                        text: `# Narrative Generation Failed\n\n⚠️ **Error**: ${errorMessage}\n\n## Original Resource\n\n\`\`\`json\n${JSON.stringify(resource, null, 2)}\n\`\`\``,
+                    },
+                ],
+                isError: true,
+            };
+        }
+    }
+
+    /**
+     * Generate AI-powered clinical insights from FHIR patient data
+     * @param args Object containing patient data and analysis type
+     * @returns Promise resolving to clinical insights
+     */
+    private async _generateClinicalInsights(args: { patientData: object; analysisType?: string }): Promise<any> {
+        const {patientData, analysisType = 'summary'} = args;
+
+        try {
+            const insights = await this.samplingManager.generateClinicalInsights(
+                patientData,
+                analysisType as 'summary' | 'care-gaps' | 'risk-assessment' | 'next-steps'
+            );
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `# AI-Powered Clinical Insights\n\n## Analysis Type: ${analysisType.charAt(0).toUpperCase() + analysisType.slice(1).replace('-', ' ')}\n\n
+                        ${insights}\n\n## Data Analyzed\n\n\`\`\`json\n${JSON.stringify(patientData, null, 2)}\n\`\`\`\n\n---\n\n*⚠️ 
+                        These insights are for informational purposes only and should not replace clinical judgment. Always consult with qualified healthcare professionals for medical decisions.*`,
+                    },
+                ],
+            };
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `# Clinical Insights Generation Failed\n\n⚠️ **Error**: ${errorMessage}\n\n## Patient Data\n\n\`\`\`json\n${JSON.stringify(patientData, null, 2)}\n\`\`\``,
                     },
                 ],
                 isError: true,
@@ -1978,10 +2132,28 @@ GET /${resourceType}?date=ge2021-01-01`;
 
         const transport = new StdioServerTransport();
 
-        // Set up transport close handler for graceful shutdown
-        transport.onclose = async (): Promise<void> => {
-            await this.cleanup();
-        };
+        if (transport) {
+
+            // Set up transport close handler for graceful shutdown
+            transport.onclose = async (): Promise<void> => {
+                await this.cleanup();
+            };
+
+            transport.onerror = async (error): Promise<void> => {
+
+                await this.notificationManager.notifyError(error.message, {
+                    error,
+                });
+
+                await this._sendFeedback({
+                    message: `Error starting server: ${error instanceof Error ? error.message : String(error)}`,
+                    level: 'error',
+                    context: {
+                        error,
+                    },
+                });
+            };
+        }
 
         await this.server.connect(transport);
 
@@ -1991,6 +2163,7 @@ GET /${resourceType}?date=ge2021-01-01`;
             resources: true,
             notifications: true,
             completions: true,
+            sampling: true,
         }, transport.constructor.name);
 
         this._sendFeedback({

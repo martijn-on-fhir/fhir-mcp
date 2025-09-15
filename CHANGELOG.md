@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.12.0...v1.13.0) (2025-09-15)
+
+
+### Features
+
+* implement comprehensive MCP sampling for AI-powered clinical intelligence ([6ac3979](https://github.com/martijn-on-fhir/fhir-mcp/commit/6ac3979a82099524069db224788685d9cb0b0fb4))
+
 # [1.12.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.11.0...v1.12.0) (2025-09-15)
 
 
