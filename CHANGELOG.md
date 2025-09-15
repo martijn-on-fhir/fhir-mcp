@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.11.0...v1.12.0) (2025-09-15)
+
+
+### Features
+
+* implement onClose handler and update FHIR endpoint configuration ([b6be26a](https://github.com/martijn-on-fhir/fhir-mcp/commit/b6be26a54b3ccf43b99a1e2f174162afeb1ca550))
+
 # [1.11.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.10.3...v1.11.0) (2025-09-14)
 
 

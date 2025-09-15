@@ -68,7 +68,7 @@ npm test
 Test with different FHIR servers:
 ```bash
 # Fhri Resource server R4
-npm start http://localhost:3000
+npm start http://localhost:3000/fhir
 ```
 
 ### Unit Tests

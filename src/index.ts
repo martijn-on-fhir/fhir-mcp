@@ -707,7 +707,7 @@ class FHIRMCPServer {
 
         this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
             const promptResources = this.promptManager.listAvailablePrompts().map(prompt => ({
-                uri: `prompt://fhir/${prompt.id}`,
+                uri: `prompt://${prompt.id}`,
                 mimeType: 'text/plain',
                 name: prompt.name,
                 description: prompt.description,
@@ -724,7 +724,7 @@ class FHIRMCPServer {
                         description: 'Current server configuration including FHIR URL',
                     },
                     {
-                        uri: 'prompts://fhir/all',
+                        uri: 'prompts://all',
                         mimeType: 'application/json',
                         name: 'All FHIR Prompts',
                         description: 'Complete list of available FHIR R4 expert prompts',
@@ -782,11 +782,11 @@ class FHIRMCPServer {
                 };
             }
 
-            if (uri === 'prompts://fhir/all') {
+            if (uri === 'prompts://all') {
                 return {
                     contents: [
                         {
-                            uri: 'prompts://fhir/all',
+                            uri: 'prompts://all',
                             mimeType: 'application/json',
                             text: JSON.stringify(this.promptManager.listAvailablePrompts(), null, 2),
                         },
@@ -794,8 +794,8 @@ class FHIRMCPServer {
                 };
             }
 
-            if (uri.startsWith('prompt://fhir/')) {
-                const promptId = uri.replace('prompt://fhir/', '');
+            if (uri.startsWith('prompt://')) {
+                const promptId = uri.replace('prompt://', '');
                 const prompt = this.promptManager.getPrompt(promptId);
 
                 if (!prompt) {
@@ -819,11 +819,11 @@ class FHIRMCPServer {
             }
 
             // Handle resolved template URIs
-            if (uri.startsWith('prompt://fhir/')) {
+            if (uri.startsWith('prompt://')) {
                 return this._handleResolvedPromptUri(uri);
             }
 
-            if (uri.startsWith('context://fhir/')) {
+            if (uri.startsWith('context://')) {
                 return this._handleResolvedContextUri(uri);
             }
 
@@ -831,11 +831,11 @@ class FHIRMCPServer {
                 return this._handleResolvedConfigUri(uri);
             }
 
-            if (uri.startsWith('validation://fhir/')) {
+            if (uri.startsWith('validation://')) {
                 return this._handleResolvedValidationUri(uri);
             }
 
-            if (uri.startsWith('examples://fhir/')) {
+            if (uri.startsWith('examples://')) {
                 return this._handleResolvedExamplesUri(uri);
             }
 
@@ -894,8 +894,8 @@ class FHIRMCPServer {
      * @returns Promise resolving to prompt content
      */
     private async _handleResolvedPromptUri(uri: string): Promise<object> {
-        // Parse URI like: prompt://fhir/clinical/patient-assessment
-        const parts = uri.replace('prompt://fhir/', '').split('/');
+        // Parse URI like: prompt://clinical/patient-assessment
+        const parts = uri.replace('prompt://', '').split('/');
 
         if (parts.length === 2) {
             const [category, promptId] = parts;
@@ -934,8 +934,8 @@ class FHIRMCPServer {
      * @returns Promise resolving to context content
      */
     private async _handleResolvedContextUri(uri: string): Promise<object> {
-        // Parse URI like: context://fhir/admission/clinical
-        const parts = uri.replace('context://fhir/', '').split('/');
+        // Parse URI like: context://admission/clinical
+        const parts = uri.replace('context://', '').split('/');
 
         if (parts.length === 2) {
             const [workflow, userType] = parts;
@@ -1014,8 +1014,8 @@ class FHIRMCPServer {
      * @returns Promise resolving to validation content
      */
     private async _handleResolvedValidationUri(uri: string): Promise<object> {
-        // Parse URI like: validation://fhir/Patient/structure
-        const parts = uri.replace('validation://fhir/', '').split('/');
+        // Parse URI like: validation://Patient/structure
+        const parts = uri.replace('validation://', '').split('/');
 
         if (parts.length === 2) {
             const [resourceType, level] = parts;
@@ -1056,8 +1056,8 @@ For detailed validation rules, see: fhir://r4/validation`,
      * @returns Promise resolving to examples content
      */
     private async _handleResolvedExamplesUri(uri: string): Promise<object> {
-        // Parse URI like: examples://fhir/Patient/search
-        const parts = uri.replace('examples://fhir/', '').split('/');
+        // Parse URI like: examples://Patient/search
+        const parts = uri.replace('examples://', '').split('/');
 
         if (parts.length === 2) {
             const [resourceType] = parts;
@@ -1152,7 +1152,7 @@ GET /${resourceType}?date=ge2021-01-01`;
 
         searchParams.append('_summary', 'data');
 
-        const url = `fhir/${resourceType}?${searchParams.toString()}`;
+        const url = `${resourceType}?${searchParams.toString()}`;
 
         void this.notificationManager.notifyProgress('search', 50, {
             resourceType,
@@ -1189,7 +1189,7 @@ GET /${resourceType}?date=ge2021-01-01`;
         searchParams.append('_summary', 'data');
 
         const {resourceType, id} = args;
-        const url = `fhir/${resourceType}/${id}?${searchParams.toString()}`;
+        const url = `${resourceType}/${id}?${searchParams.toString()}`;
 
         const response = await this._executeRequest(url, 'GET');
 
@@ -1206,7 +1206,7 @@ GET /${resourceType}?date=ge2021-01-01`;
     private async _create(args: { resourceType: string; resource: any }): Promise<any> {
 
         const {resourceType, resource} = args;
-        const url = `fhir/${resourceType}`;
+        const url = `${resourceType}`;
 
         void this.notificationManager.notifyResourceOperation('create', resourceType, {
             resourceId: resource.id || 'new',
@@ -1257,7 +1257,7 @@ GET /${resourceType}?date=ge2021-01-01`;
     private async _validate(args: { resourceType: string; resource: any }): Promise<any> {
 
         const {resourceType, resource} = args;
-        const url = 'fhir/$validate';
+        const url = '$validate';
 
         void this.notificationManager.notifyResourceOperation('create', resourceType, {
             resourceId: resource.id || 'unknown',
@@ -1356,7 +1356,7 @@ GET /${resourceType}?date=ge2021-01-01`;
     private async _update(args: { resourceType: string; id: string; resource: any }): Promise<any> {
 
         const {resourceType, id, resource} = args;
-        const url = `fhir/${resourceType}/${id}`;
+        const url = `${resourceType}/${id}`;
 
         return await this._executeRequest(url, 'PUT', resource).then(response => {
 
@@ -1390,7 +1390,7 @@ GET /${resourceType}?date=ge2021-01-01`;
     private async _delete(args: { resourceType: string; id: string }): Promise<any> {
 
         const {resourceType, id} = args;
-        const url = `fhir/${resourceType}/${id}`;
+        const url = `${resourceType}/${id}`;
 
         const response = await this._executeRequest(url, 'DELETE');
 
@@ -1410,7 +1410,7 @@ GET /${resourceType}?date=ge2021-01-01`;
      */
     private async _getCapability(): Promise<any> {
 
-        const url = 'fhir/metadata';
+        const url = 'metadata';
 
         try {
             const response = await this._executeRequest(url, 'GET');
@@ -1977,6 +1977,12 @@ GET /${resourceType}?date=ge2021-01-01`;
     async run(): Promise<void> {
 
         const transport = new StdioServerTransport();
+
+        // Set up transport close handler for graceful shutdown
+        transport.onclose = async (): Promise<void> => {
+            await this.cleanup();
+        };
+
         await this.server.connect(transport);
 
         // Send server startup notification
@@ -1994,6 +2000,34 @@ GET /${resourceType}?date=ge2021-01-01`;
                 transport: transport.constructor.name,
             },
         });
+    }
+
+    /**
+     * Cleanup method called when the transport connection is closed.
+     * Performs graceful shutdown operations including resource cleanup,
+     * final notifications, and state management.
+     */
+    private async cleanup(): Promise<void> {
+        try {
+
+            await this.notificationManager.notifyConnectionStatus('disconnected', {
+                message: 'MCP server connection closed',
+                reason: 'transport_closed',
+                timestamp: new Date().toISOString(),
+            });
+
+            this._sendFeedback({
+                message: 'MCP server connection closed - cleanup completed',
+                level: 'info',
+                context: {
+                    event: 'transport_closed',
+                },
+            });
+
+        } catch (error) {
+            // Use stderr for cleanup errors to avoid corrupting MCP protocol
+            process.stderr.write(`Error during server cleanup: ${error instanceof Error ? error.message : String(error)}\n`);
+        }
     }
 }
 

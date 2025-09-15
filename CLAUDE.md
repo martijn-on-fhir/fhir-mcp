@@ -47,9 +47,9 @@ Add this to your Claude Desktop configuration file:
   "mcpServers": {
     "fhir": {
       "command": "node",
-      "args": ["C:/projects/fhir-mcp/dist/index.js", "http://localhost:3000"],
+      "args": ["C:/projects/fhir-mcp/dist/index.js", "http://localhost:3000/fhir"],
       "env": {
-        "FHIR_URL": "http://localhost:3000"
+        "FHIR_URL": "http://localhost:3000/fhir"
       }
     }
   }
@@ -64,7 +64,7 @@ Or using environment variable only:
       "command": "node",
       "args": ["C:/projects/fhir-mcp/dist/index.js"],
       "env": {
-        "FHIR_URL": "http://localhost:3000",
+        "FHIR_URL": "http://localhost:3000/fhir",
         "FHIR_API_KEY": "your-api-key-if-needed",
         "USE_DUTCH_PROFILES": "true"
       }
@@ -78,7 +78,7 @@ Or using environment variable only:
 To test the server manually:
 ```bash
 npm run build
-npm start http://localhost:3000
+npm start http://localhost:3000/fhir
 ```
 
 ### Alternative FHIR Test Servers
@@ -87,7 +87,7 @@ If you encounter HTTP 500 errors with the HAPI server, try these alternatives:
 
 ```bash
 # Fhir Localhost R4 (primary)
-npm start http://localhost:3000
+npm start http://localhost:3000/fhir
 ```
 
 ### Debugging HTTP 500 Errors
