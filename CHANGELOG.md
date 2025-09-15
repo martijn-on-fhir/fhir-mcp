@@ -1,3 +1,10 @@
+## [1.13.1](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.13.0...v1.13.1) (2025-09-15)
+
+
+### Bug Fixes
+
+* resolve MCP completion format mismatch and enhance prompt URI handling ([716d7f3](https://github.com/martijn-on-fhir/fhir-mcp/commit/716d7f3af5892608a63cc6e5b401513baf6d9573))
+
 # [1.13.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.12.0...v1.13.0) (2025-09-15)
 
 
