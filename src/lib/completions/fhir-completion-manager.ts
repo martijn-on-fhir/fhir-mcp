@@ -14,10 +14,15 @@ export interface CompletionResult {
 }
 
 export interface CompletionRequest {
-    ref: {
+    ref?: {
         name: string;
         value: string;
     };
+    argument?: {
+        name: string;
+        value: string;
+    };
+    context?: any;
 }
 
 /**
@@ -35,19 +40,34 @@ export class FHIRCompletionManager {
      */
     async handleCompletion(params: CompletionRequest): Promise<CompletionResult> {
 
-        const { ref } = params;
+        const { ref, argument } = params;
 
-        if (!ref || !ref.name) {
+        // Support both ref and argument formats
+        let paramName: string;
+        let currentValue: string;
+
+        if (argument && argument.name) {
+            // MCP Inspector format: uses 'argument' field
+            paramName = argument.name;
+            currentValue = argument.value || '';
+        } else if (ref && ref.name) {
+            // Traditional format: uses 'ref' field
+            paramName = ref.name;
+            currentValue = ref.value || '';
+        } else {
             return this.createEmptyCompletion();
         }
-
-        const paramName = ref.name;
-        const currentValue = ref.value || '';
 
         // Handle different parameter completions
         switch (paramName) {
         case 'resourceType':
             return this.getResourceTypeCompletions(currentValue);
+        case 'category':
+            // MCP Inspector uses 'category' for resource type in templates
+            return this.getResourceTypeCompletions(currentValue);
+        case 'promptId':
+            // Handle prompt ID completions for template URIs
+            return this.getPromptIdCompletions(currentValue);
         case 'parameters':
             return this.getSearchParameterCompletions(currentValue);
         case 'id':
@@ -57,6 +77,24 @@ export class FHIRCompletionManager {
         case 'code':
             return this.getCodeCompletions(currentValue);
         default:
+            // For unrecognized parameters, try to provide intelligent fallbacks
+
+            // Check if the current value looks like a FHIR resource type
+            const fhirResourceTypes = this.getFhirResourceTypes();
+            const isResourceTypeLike = currentValue && fhirResourceTypes.some(rt =>
+                rt.toLowerCase().startsWith(currentValue.toLowerCase()) ||
+                currentValue.toLowerCase().startsWith(rt.toLowerCase())
+            );
+
+            if (isResourceTypeLike || currentValue.toLowerCase().includes('patient')) {
+                return this.getResourceTypeCompletions(currentValue);
+            }
+
+            // Check if it looks like a search parameter
+            if (currentValue.startsWith('_') || currentValue.includes('name') || currentValue.includes('id')) {
+                return this.getSearchParameterCompletions(currentValue);
+            }
+
             return this.createEmptyCompletion();
         }
     }
@@ -285,6 +323,33 @@ export class FHIRCompletionManager {
         const params = resourceSpecificParams[resourceType] || this.getCommonSearchParameters();
         const matches = params.filter(param =>
             param.toLowerCase().startsWith(value.toLowerCase())
+        );
+
+        return this.createCompletionResult(matches);
+    }
+
+    /**
+     * Get prompt ID completions for template URIs
+     * @param value Current partial value
+     * @returns Completion result with prompt IDs
+     */
+    getPromptIdCompletions(value: string): CompletionResult {
+        // Common prompt IDs that might be available
+        const promptIds = [
+            'patient-assessment',
+            'clinical-summary',
+            'care-planning',
+            'risk-assessment',
+            'medication-review',
+            'diagnostic-guidance',
+            'treatment-planning',
+            'documentation-guide',
+            'workflow-optimization',
+            'compliance-check'
+        ];
+
+        const matches = promptIds.filter(promptId =>
+            promptId.toLowerCase().startsWith(value.toLowerCase())
         );
 
         return this.createCompletionResult(matches);

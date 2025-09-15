@@ -832,7 +832,8 @@ class FHIRMCPServer {
                 };
             }
 
-            if (uri.startsWith('prompt://')) {
+            // Handle simple prompt URIs (no path separators, direct prompt IDs)
+            if (uri.startsWith('prompt://') && !uri.includes('/', 9)) {
                 const promptId = uri.replace('prompt://', '');
                 const prompt = this.promptManager.getPrompt(promptId);
 
@@ -856,8 +857,8 @@ class FHIRMCPServer {
                 return await this.documentationProvider.getFHIRDocumentation(uri);
             }
 
-            // Handle resolved template URIs
-            if (uri.startsWith('prompt://')) {
+            // Handle complex prompt template URIs (with path separators)
+            if (uri.startsWith('prompt://') && uri.includes('/', 9)) {
                 return this._handleResolvedPromptUri(uri);
             }
 
@@ -932,7 +933,7 @@ class FHIRMCPServer {
      * @returns Promise resolving to prompt content
      */
     private async _handleResolvedPromptUri(uri: string): Promise<object> {
-        // Parse URI like: prompt://clinical/patient-assessment
+        // Parse URI like: prompt://clinical/patient-assessment or prompt://fhir/resource/Patient
         const parts = uri.replace('prompt://', '').split('/');
 
         if (parts.length === 2) {
@@ -954,6 +955,51 @@ class FHIRMCPServer {
                     }],
                 };
             }
+        }
+
+        // Handle FHIR resource-specific prompts in multiple formats:
+        // Format 1: prompt://fhir/resource/Patient (template format)
+        // Format 2: prompt://fhir/Patient/ (client format)
+        if ((parts.length === 3 && parts[0] === 'fhir' && parts[1] === 'resource') ||
+            (parts.length >= 2 && parts[0] === 'fhir' && parts[1] !== 'resource')) {
+
+            // Extract resource type from either format
+            let resourceType: string;
+            if (parts[1] === 'resource') {
+                resourceType = parts[2] || ''; // Format 1: prompt://fhir/resource/Patient
+            } else {
+                resourceType = parts[1] ? parts[1].replace(/\/$/, '') : ''; // Format 2: prompt://fhir/Patient/ (remove trailing slash)
+            }
+
+            if (!resourceType) {
+                throw new Error(`Invalid FHIR resource prompt URI format: ${uri}`);
+            }
+
+            const resourcePrompts = this.promptManager.getPromptsByResourceType(resourceType);
+
+            if (resourcePrompts.length > 0) {
+                // Use the first available prompt for this resource type
+                const prompt = resourcePrompts[0];
+                if (prompt) {
+                    return {
+                        contents: [{
+                            uri,
+                            mimeType: 'text/plain',
+                            text: this.promptManager.generatePrompt(prompt.id, { resourceType }),
+                        }],
+                    };
+                }
+            }
+
+            // If no specific prompt exists, generate a generic resource prompt
+            const genericPrompt = this.promptManager.getClinicalContextPrompt(resourceType, 'general', 'clinical');
+            return {
+                contents: [{
+                    uri,
+                    mimeType: 'text/plain',
+                    text: genericPrompt,
+                }],
+            };
         }
 
         // Fallback to existing prompt handling
