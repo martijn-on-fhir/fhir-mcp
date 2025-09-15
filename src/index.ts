@@ -10,7 +10,6 @@ import {
     ListRootsRequestSchema,
     ListToolsRequestSchema,
     ReadResourceRequestSchema,
-    CreateMessageRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import {loadConfigWithFile as loadConfig} from './lib/configuration/config-loader.js';
 import {ServerConfig} from './lib/configuration/config.js';
@@ -1493,6 +1492,7 @@ GET /${resourceType}?date=ge2021-01-01`;
             };
 
         } catch (error) {
+
             const errorMessage = error instanceof Error ? error.message : String(error);
 
             return {
@@ -1507,6 +1507,17 @@ GET /${resourceType}?date=ge2021-01-01`;
         }
     }
 
+    /**
+     * Updates a resource by sending an HTTP PUT request to the specified URL.
+     *
+     * @param {Object} args - An object containing the details of the resource to update.
+     * @param {string} args.resourceType - The type of the resource.
+     * @param {string} args.id - The unique identifier of the resource.
+     * @param {any} args.resource - The resource data to be updated.
+     *
+     * @return {Promise<any>} A promise that resolves to the response content,
+     * containing the updated resource data or an error message.
+     */
     private async _update(args: { resourceType: string; id: string; resource: any }): Promise<any> {
 
         const {resourceType, id, resource} = args;
