@@ -43,14 +43,32 @@ describe('FHIRCompletionManager', () => {
             expect(result.completion.total).toBeGreaterThan(0);
         });
 
-        it('should return empty completion for unknown parameter names', async () => {
+        it('should return empty completion for unknown parameter names with non-matching values', async () => {
             const result = await completionManager.handleCompletion({
-                ref: { name: 'unknownParameter', value: 'test' },
+                ref: { name: 'unknownParameter', value: 'xyz123' },
             });
 
             expect(result.completion.values).toHaveLength(0);
             expect(result.completion.total).toBe(0);
             expect(result.completion.hasMore).toBe(false);
+        });
+
+        it('should handle MCP Inspector argument format for category parameter', async () => {
+            const result = await completionManager.handleCompletion({
+                argument: { name: 'category', value: 'Pat' },
+            });
+
+            expect(result.completion.values).toContain('Patient');
+            expect(result.completion.total).toBeGreaterThan(0);
+        });
+
+        it('should handle fallback for resource-like values in unknown parameters', async () => {
+            const result = await completionManager.handleCompletion({
+                ref: { name: 'unknownParameter', value: 'Pat' },
+            });
+
+            expect(result.completion.values).toContain('Patient');
+            expect(result.completion.total).toBeGreaterThan(0);
         });
     });
 
