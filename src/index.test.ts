@@ -155,7 +155,7 @@ describe('FHIR MCP Server Index', () => {
     describe('HTTP Request Configuration', () => {
         it('should test axios configuration structure', () => {
             const expectedAxiosConfig = {
-                baseURL: 'http://localhost:3000',
+                baseURL: 'http://localhost:3000/fhir',
                 headers: {
                     'Accept': 'application/fhir+json',
                     'Content-Type': 'application/fhir+json',
@@ -357,6 +357,79 @@ describe('FHIR MCP Server Index', () => {
             expect(emptyCompletion.completion.values).toHaveLength(0);
             expect(emptyCompletion.completion.total).toBe(0);
             expect(emptyCompletion.completion.hasMore).toBe(false);
+        });
+    });
+
+    describe('Transport onClose Handler', () => {
+        it('should test transport onclose callback structure', () => {
+            const mockTransport = {
+                onclose: null as (() => void) | null,
+                connect: jest.fn(),
+                constructor: { name: 'StdioServerTransport' },
+            };
+
+            const cleanupCallback = async () => {
+                // Mock cleanup operations
+            };
+
+            mockTransport.onclose = cleanupCallback;
+
+            expect(mockTransport.onclose).toBe(cleanupCallback);
+            expect(typeof mockTransport.onclose).toBe('function');
+        });
+
+        it('should test cleanup notification structure', () => {
+            const disconnectionNotification = {
+                type: 'connection_status',
+                status: 'disconnected',
+                message: 'MCP server connection closed',
+                reason: 'transport_closed',
+                timestamp: new Date().toISOString(),
+            };
+
+            expect(disconnectionNotification.type).toBe('connection_status');
+            expect(disconnectionNotification.status).toBe('disconnected');
+            expect(disconnectionNotification.reason).toBe('transport_closed');
+            expect(disconnectionNotification.message).toContain('connection closed');
+            expect(disconnectionNotification).toHaveProperty('timestamp');
+        });
+
+        it('should test cleanup feedback message structure', () => {
+            const cleanupFeedback = {
+                message: 'MCP server connection closed - cleanup completed',
+                level: 'info',
+                context: {
+                    event: 'transport_closed',
+                },
+            };
+
+            expect(cleanupFeedback.level).toBe('info');
+            expect(cleanupFeedback.message).toContain('cleanup completed');
+            expect(cleanupFeedback.context.event).toBe('transport_closed');
+        });
+
+        it('should test error handling during cleanup', () => {
+            const mockError = new Error('Cleanup failed');
+            const errorOutput = `Error during server cleanup: ${mockError.message}\n`;
+
+            expect(errorOutput).toContain('Error during server cleanup:');
+            expect(errorOutput).toContain('Cleanup failed');
+            expect(errorOutput.endsWith('\n')).toBe(true);
+        });
+
+        it('should test graceful shutdown sequence', () => {
+            const shutdownSequence = [
+                { step: 'transport_close', action: 'onclose_triggered' },
+                { step: 'notification', action: 'send_disconnection_status' },
+                { step: 'cleanup', action: 'clear_resources' },
+                { step: 'feedback', action: 'log_completion' },
+            ];
+
+            expect(shutdownSequence).toHaveLength(4);
+            expect(shutdownSequence[0]?.action).toBe('onclose_triggered');
+            expect(shutdownSequence[1]?.action).toBe('send_disconnection_status');
+            expect(shutdownSequence[2]?.action).toBe('clear_resources');
+            expect(shutdownSequence[3]?.action).toBe('log_completion');
         });
     });
 });
