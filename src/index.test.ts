@@ -240,6 +240,27 @@ describe('FHIR MCP Server Index', () => {
             });
         });
 
+        it('should test context URI format validation', () => {
+            // Test valid context URI formats
+            const validContextUris = [
+                'context://admission/clinical',  // 2-part format
+                'context://fhir/Patient/CarePlan', // 3-part FHIR format
+                'context://fhir/Observation/clinical',
+            ];
+
+            validContextUris.forEach(uri => {
+                expect(typeof uri).toBe('string');
+                expect(uri.startsWith('context://')).toBe(true);
+                const parts = uri.replace('context://', '').split('/');
+                expect(parts.length).toBeGreaterThanOrEqual(2);
+                expect(parts.length).toBeLessThanOrEqual(3);
+
+                if (parts.length === 3) {
+                    expect(parts[0]).toBe('fhir');
+                }
+            });
+        });
+
         it('should test template URI parameter structure', () => {
             const templateResponse = {
                 templateUri: 'template://test/{param1}',

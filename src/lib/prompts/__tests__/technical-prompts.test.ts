@@ -35,7 +35,7 @@ describe('TechnicalPrompts', () => {
             const prompts = technicalPrompts.getPrompts();
 
             expect(Array.isArray(prompts)).toBe(true);
-            expect(prompts.length).toBe(5);
+            expect(prompts.length).toBe(6);
 
             prompts.forEach(prompt => {
                 expect(prompt).toHaveProperty('id');
@@ -101,6 +101,20 @@ describe('TechnicalPrompts', () => {
             expect(testingPrompt!.tags).toContain('testing');
             expect(testingPrompt!.tags).toContain('validation');
             expect(testingPrompt!.tags).toContain('qa');
+        });
+
+        it('should include user-technical context prompt', () => {
+            const prompts = technicalPrompts.getPrompts();
+            const userTechPrompt = prompts.find(p => p.id === 'user-technical');
+
+            expect(userTechPrompt).toBeDefined();
+            expect(userTechPrompt!.name).toBe('Technical User Context');
+            expect(userTechPrompt!.description).toContain('technical users and developers');
+            expect(userTechPrompt!.tags).toContain('technical');
+            expect(userTechPrompt!.tags).toContain('user-context');
+            expect(userTechPrompt!.tags).toContain('technical-user');
+            expect(userTechPrompt!.tags).toContain('developer');
+            expect(userTechPrompt!.context?.userType).toBe('technical');
         });
 
         it('should return consistent results on multiple calls', () => {

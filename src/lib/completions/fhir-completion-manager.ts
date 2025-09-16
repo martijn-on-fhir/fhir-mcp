@@ -63,8 +63,7 @@ export class FHIRCompletionManager {
         case 'resourceType':
             return this.getResourceTypeCompletions(currentValue);
         case 'category':
-            // MCP Inspector uses 'category' for resource type in templates
-            return this.getResourceTypeCompletions(currentValue);
+            return this.getCategoryCompletions(currentValue);
         case 'promptId':
             // Handle prompt ID completions for template URIs
             return this.getPromptIdCompletions(currentValue);
@@ -76,6 +75,16 @@ export class FHIRCompletionManager {
             return this.getStatusCompletions(currentValue);
         case 'code':
             return this.getCodeCompletions(currentValue);
+        case 'workflow':
+            return this.getWorkflowCompletions(currentValue);
+        case 'userType':
+            return this.getUserTypeCompletions(currentValue);
+        case 'configType':
+            return this.getConfigTypeCompletions(currentValue);
+        case 'docType':
+            return this.getDocTypeCompletions(currentValue);
+        case 'level':
+            return this.getLevelCompletions(currentValue);
         default:
             // For unrecognized parameters, try to provide intelligent fallbacks
 
@@ -350,6 +359,131 @@ export class FHIRCompletionManager {
 
         const matches = promptIds.filter(promptId =>
             promptId.toLowerCase().startsWith(value.toLowerCase())
+        );
+
+        return this.createCompletionResult(matches);
+    }
+
+    /**
+     * Get workflow completions for FHIR workflow context templates
+     * @param value Current partial value
+     * @returns Completion result with workflow types
+     */
+    getWorkflowCompletions(value: string): CompletionResult {
+        const workflows = [
+            'admission',
+            'discharge',
+            'medication-review',
+            'care-planning',
+            'billing',
+            'scheduling'
+        ];
+
+        const matches = workflows.filter(workflow =>
+            workflow.toLowerCase().startsWith(value.toLowerCase())
+        );
+
+        return this.createCompletionResult(matches);
+    }
+
+    /**
+     * Get user type completions for FHIR context templates
+     * @param value Current partial value
+     * @returns Completion result with user types
+     */
+    getUserTypeCompletions(value: string): CompletionResult {
+        const userTypes = [
+            'clinical',
+            'patient',
+            'technical'
+        ];
+
+        const matches = userTypes.filter(userType =>
+            userType.toLowerCase().startsWith(value.toLowerCase())
+        );
+
+        return this.createCompletionResult(matches);
+    }
+
+    /**
+     * Get configuration type completions for Configuration Templates
+     * @param value Current partial value
+     * @returns Completion result with configuration types
+     */
+    getConfigTypeCompletions(value: string): CompletionResult {
+        const configTypes = [
+            'server',
+            'fhir',
+            'security',
+            'prompts',
+            'documentation'
+        ];
+
+        const matches = configTypes.filter(configType =>
+            configType.toLowerCase().startsWith(value.toLowerCase())
+        );
+
+        return this.createCompletionResult(matches);
+    }
+
+    /**
+     * Get documentation type completions for FHIR R4 Documentation Templates
+     * @param value Current partial value
+     * @returns Completion result with documentation types
+     */
+    getDocTypeCompletions(value: string): CompletionResult {
+        const docTypes = [
+            'specification',
+            'resources',
+            'datatypes',
+            'search',
+            'validation',
+            'terminology'
+        ];
+
+        const matches = docTypes.filter(docType =>
+            docType.toLowerCase().startsWith(value.toLowerCase())
+        );
+
+        return this.createCompletionResult(matches);
+    }
+
+    /**
+     * Get validation level completions for FHIR Resource Validation Templates
+     * @param value Current partial value
+     * @returns Completion result with validation levels
+     */
+    getLevelCompletions(value: string): CompletionResult {
+        const levels = [
+            'structure',
+            'cardinality',
+            'terminology',
+            'profile',
+            'invariants'
+        ];
+
+        const matches = levels.filter(level =>
+            level.toLowerCase().startsWith(value.toLowerCase())
+        );
+
+        return this.createCompletionResult(matches);
+    }
+
+    /**
+     * Get category completions for prompt category templates
+     * @param value Current partial value
+     * @returns Completion result with prompt categories
+     */
+    getCategoryCompletions(value: string): CompletionResult {
+        const categories = [
+            'clinical',
+            'security',
+            'technical',
+            'workflow'
+        ];
+
+        const matches = categories.filter(category =>
+            category.toLowerCase().startsWith(value.toLowerCase())
         );
 
         return this.createCompletionResult(matches);

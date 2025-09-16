@@ -55,10 +55,10 @@ describe('FHIRCompletionManager', () => {
 
         it('should handle MCP Inspector argument format for category parameter', async () => {
             const result = await completionManager.handleCompletion({
-                argument: { name: 'category', value: 'Pat' },
+                argument: { name: 'category', value: 'c' },
             });
 
-            expect(result.completion.values).toContain('Patient');
+            expect(result.completion.values).toContain('clinical');
             expect(result.completion.total).toBeGreaterThan(0);
         });
 
@@ -275,6 +275,241 @@ describe('FHIRCompletionManager', () => {
                 expect(result.completion.hasMore).toBe(false);
                 expect(result.completion.values.length).toBe(result.completion.total);
             }
+        });
+    });
+
+    describe('getWorkflowCompletions', () => {
+        it('should return all workflow types for empty value', () => {
+            const result = completionManager.getWorkflowCompletions('');
+
+            expect(result.completion.values).toContain('admission');
+            expect(result.completion.values).toContain('discharge');
+            expect(result.completion.values).toContain('medication-review');
+            expect(result.completion.values).toContain('care-planning');
+            expect(result.completion.values).toContain('billing');
+            expect(result.completion.values).toContain('scheduling');
+            expect(result.completion.values.length).toBe(6);
+        });
+
+        it('should filter workflow types by prefix', () => {
+            const result = completionManager.getWorkflowCompletions('c');
+
+            expect(result.completion.values).toContain('care-planning');
+            expect(result.completion.values).not.toContain('admission');
+            expect(result.completion.values).not.toContain('discharge');
+        });
+
+        it('should be case-insensitive', () => {
+            const result = completionManager.getWorkflowCompletions('CARE');
+
+            expect(result.completion.values).toContain('care-planning');
+        });
+
+        it('should return empty for non-matching prefix', () => {
+            const result = completionManager.getWorkflowCompletions('xyz');
+
+            expect(result.completion.values).toHaveLength(0);
+        });
+    });
+
+    describe('getUserTypeCompletions', () => {
+        it('should return all user types for empty value', () => {
+            const result = completionManager.getUserTypeCompletions('');
+
+            expect(result.completion.values).toContain('clinical');
+            expect(result.completion.values).toContain('patient');
+            expect(result.completion.values).toContain('technical');
+            expect(result.completion.values.length).toBe(3);
+        });
+
+        it('should filter user types by prefix', () => {
+            const result = completionManager.getUserTypeCompletions('t');
+
+            expect(result.completion.values).toContain('technical');
+            expect(result.completion.values).not.toContain('clinical');
+            expect(result.completion.values).not.toContain('patient');
+        });
+
+        it('should be case-insensitive', () => {
+            const result = completionManager.getUserTypeCompletions('TECH');
+
+            expect(result.completion.values).toContain('technical');
+        });
+
+        it('should return empty for non-matching prefix', () => {
+            const result = completionManager.getUserTypeCompletions('xyz');
+
+            expect(result.completion.values).toHaveLength(0);
+        });
+    });
+
+    describe('getConfigTypeCompletions', () => {
+        it('should return all config types for empty value', () => {
+            const result = completionManager.getConfigTypeCompletions('');
+
+            expect(result.completion.values).toContain('server');
+            expect(result.completion.values).toContain('fhir');
+            expect(result.completion.values).toContain('security');
+            expect(result.completion.values).toContain('prompts');
+            expect(result.completion.values).toContain('documentation');
+            expect(result.completion.values.length).toBe(5);
+        });
+
+        it('should filter config types by prefix', () => {
+            const result = completionManager.getConfigTypeCompletions('s');
+
+            expect(result.completion.values).toContain('server');
+            expect(result.completion.values).toContain('security');
+            expect(result.completion.values).not.toContain('fhir');
+            expect(result.completion.values).not.toContain('prompts');
+        });
+
+        it('should be case-insensitive', () => {
+            const result = completionManager.getConfigTypeCompletions('SERV');
+
+            expect(result.completion.values).toContain('server');
+        });
+
+        it('should return empty for non-matching prefix', () => {
+            const result = completionManager.getConfigTypeCompletions('xyz');
+
+            expect(result.completion.values).toHaveLength(0);
+        });
+    });
+
+    describe('getDocTypeCompletions', () => {
+        it('should return all doc types for empty value', () => {
+            const result = completionManager.getDocTypeCompletions('');
+
+            expect(result.completion.values).toContain('specification');
+            expect(result.completion.values).toContain('resources');
+            expect(result.completion.values).toContain('datatypes');
+            expect(result.completion.values).toContain('search');
+            expect(result.completion.values).toContain('validation');
+            expect(result.completion.values).toContain('terminology');
+            expect(result.completion.values.length).toBe(6);
+        });
+
+        it('should filter doc types by prefix', () => {
+            const result = completionManager.getDocTypeCompletions('s');
+
+            expect(result.completion.values).toContain('specification');
+            expect(result.completion.values).toContain('search');
+            expect(result.completion.values).not.toContain('resources');
+        });
+
+        it('should be case-insensitive', () => {
+            const result = completionManager.getDocTypeCompletions('SPEC');
+
+            expect(result.completion.values).toContain('specification');
+        });
+    });
+
+    describe('getLevelCompletions', () => {
+        it('should return all validation levels for empty value', () => {
+            const result = completionManager.getLevelCompletions('');
+
+            expect(result.completion.values).toContain('structure');
+            expect(result.completion.values).toContain('cardinality');
+            expect(result.completion.values).toContain('terminology');
+            expect(result.completion.values).toContain('profile');
+            expect(result.completion.values).toContain('invariants');
+            expect(result.completion.values.length).toBe(5);
+        });
+
+        it('should filter levels by prefix', () => {
+            const result = completionManager.getLevelCompletions('t');
+
+            expect(result.completion.values).toContain('terminology');
+            expect(result.completion.values).not.toContain('structure');
+        });
+
+        it('should be case-insensitive', () => {
+            const result = completionManager.getLevelCompletions('TERM');
+
+            expect(result.completion.values).toContain('terminology');
+        });
+    });
+
+    describe('getCategoryCompletions', () => {
+        it('should return all categories for empty value', () => {
+            const result = completionManager.getCategoryCompletions('');
+
+            expect(result.completion.values).toContain('clinical');
+            expect(result.completion.values).toContain('security');
+            expect(result.completion.values).toContain('technical');
+            expect(result.completion.values).toContain('workflow');
+            expect(result.completion.values.length).toBe(4);
+        });
+
+        it('should filter categories by prefix', () => {
+            const result = completionManager.getCategoryCompletions('t');
+
+            expect(result.completion.values).toContain('technical');
+            expect(result.completion.values).not.toContain('clinical');
+        });
+
+        it('should be case-insensitive', () => {
+            const result = completionManager.getCategoryCompletions('TECH');
+
+            expect(result.completion.values).toContain('technical');
+        });
+    });
+
+    describe('handleCompletion with all template parameters', () => {
+        it('should return workflow completions for workflow parameter', async () => {
+            const result = await completionManager.handleCompletion({
+                argument: { name: 'workflow', value: 'a' }
+            });
+
+            expect(result.completion.values).toContain('admission');
+            expect(result.completion.values).not.toContain('discharge');
+        });
+
+        it('should return userType completions for userType parameter', async () => {
+            const result = await completionManager.handleCompletion({
+                argument: { name: 'userType', value: 'c' }
+            });
+
+            expect(result.completion.values).toContain('clinical');
+            expect(result.completion.values).not.toContain('patient');
+        });
+
+        it('should return configType completions for configType parameter', async () => {
+            const result = await completionManager.handleCompletion({
+                argument: { name: 'configType', value: 'f' }
+            });
+
+            expect(result.completion.values).toContain('fhir');
+            expect(result.completion.values).not.toContain('server');
+        });
+
+        it('should return docType completions for docType parameter', async () => {
+            const result = await completionManager.handleCompletion({
+                argument: { name: 'docType', value: 's' }
+            });
+
+            expect(result.completion.values).toContain('specification');
+            expect(result.completion.values).toContain('search');
+            expect(result.completion.values).not.toContain('resources');
+        });
+
+        it('should return level completions for level parameter', async () => {
+            const result = await completionManager.handleCompletion({
+                argument: { name: 'level', value: 'p' }
+            });
+
+            expect(result.completion.values).toContain('profile');
+            expect(result.completion.values).not.toContain('structure');
+        });
+
+        it('should return category completions for category parameter', async () => {
+            const result = await completionManager.handleCompletion({
+                argument: { name: 'category', value: 'c' }
+            });
+
+            expect(result.completion.values).toContain('clinical');
+            expect(result.completion.values).not.toContain('technical');
         });
     });
 });

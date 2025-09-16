@@ -97,7 +97,8 @@ export class FHIRPromptManager implements PromptProvider {
         }
 
         // Add user-type specific context
-        const userPrompt = this.generatePrompt(`user-${userType}`, { userType });
+        const normalizedUserType = userType.toLowerCase();
+        const userPrompt = this.generatePrompt(`user-${normalizedUserType}`, { userType: normalizedUserType });
         contextPrompts.push(userPrompt);
 
         return contextPrompts.join('\n\n');

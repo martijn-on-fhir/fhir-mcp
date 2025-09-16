@@ -21,13 +21,15 @@ import {ElicitationToolHandlers} from './lib/elicitation/elicitation-tool-handle
 import {FHIRCompletionManager} from './lib/completions/fhir-completion-manager.js';
 import {FHIRNotificationManager} from './lib/notifications/fhir-notification-manager.js';
 import {FHIRSamplingManager} from './lib/sampling/fhir-sampling-manager.js';
+import {AuthManager} from './lib/auth/auth-manager.js';
+import {OAuthToolHandler, AuthManagerProvider} from './lib/auth/oauth-tool-handler.js';
 import {Axios} from 'axios';
 
 /**
  * FHIR Model Context Protocol Server implementation
  * Provides a bridge between MCP clients and FHIR REST APIs
  */
-class FHIRMCPServer {
+class FHIRMCPServer implements AuthManagerProvider {
 
     /**
      * Represents the server instance that is used to handle incoming requests
@@ -137,6 +139,19 @@ class FHIRMCPServer {
      */
     private samplingManager: FHIRSamplingManager;
 
+    /**
+     * An instance of `AuthManager` responsible for handling all authentication
+     * modes for FHIR server connections including none, bearer token, and
+     * OAuth 2.0 client credentials flow with automatic token management.
+     */
+    private authManager: AuthManager;
+
+    /**
+     * An instance of `OAuthToolHandler` responsible for handling OAuth-related
+     * tool operations including configuration, testing, and token management.
+     */
+    private oauthToolHandler: OAuthToolHandler;
+
     constructor() {
 
         this.config = loadConfig();
@@ -164,9 +179,15 @@ class FHIRMCPServer {
         }
         );
 
-        // Initialize notification and sampling managers after server is created
+        // Initialize notification, sampling, and authentication managers after server is created
         this.notificationManager = new FHIRNotificationManager(this.server, this.config.url);
         this.samplingManager = new FHIRSamplingManager(this.server);
+        this.authManager = new AuthManager(this.config.auth);
+        this.oauthToolHandler = new OAuthToolHandler(
+            this.authManager,
+            this.config,
+            this
+        );
 
         this._setupHandlers();
         this._setUpAxios();
@@ -413,6 +434,81 @@ class FHIRMCPServer {
                                 },
                             },
                             required: ['patientData'],
+                        },
+                    },
+                    {
+                        name: 'fhir_auth_configure',
+                        description: 'Configure FHIR server authentication settings interactively. Supports none, bearer token, and OAuth 2.0 client credentials authentication modes.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                authType: {
+                                    type: 'string',
+                                    enum: ['none', 'bearer', 'client_credentials'],
+                                    description: 'Authentication type to configure',
+                                },
+                                token: {
+                                    type: 'string',
+                                    description: 'Bearer token (for bearer auth type)',
+                                },
+                                tokenUrl: {
+                                    type: 'string',
+                                    description: 'OAuth token endpoint URL (for client_credentials auth type)',
+                                },
+                                clientId: {
+                                    type: 'string',
+                                    description: 'OAuth client ID (for client_credentials auth type)',
+                                },
+                                clientSecret: {
+                                    type: 'string',
+                                    description: 'OAuth client secret (for client_credentials auth type)',
+                                },
+                                scope: {
+                                    type: 'string',
+                                    description: 'OAuth scope (for client_credentials auth type)',
+                                },
+                                autoDiscover: {
+                                    type: 'boolean',
+                                    description: 'Auto-discover OAuth endpoints from FHIR server (for client_credentials auth type)',
+                                },
+                            },
+                        },
+                    },
+                    {
+                        name: 'fhir_auth_test',
+                        description: 'Test current authentication configuration and display authentication status, token information, and connection details.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {},
+                        },
+                    },
+                    {
+                        name: 'fhir_token_status',
+                        description: 'Get current OAuth token status including validity, expiration, and refresh information.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {},
+                        },
+                    },
+                    {
+                        name: 'fhir_token_refresh',
+                        description: 'Manually refresh OAuth access token for client_credentials authentication mode.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {},
+                        },
+                    },
+                    {
+                        name: 'fhir_oauth_discover',
+                        description: 'Auto-discover OAuth endpoints from FHIR server\'s .well-known configuration. Attempts to find SMART on FHIR configuration.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                fhirUrl: {
+                                    type: 'string',
+                                    description: 'FHIR server base URL (optional, uses current server if not provided)',
+                                },
+                            },
                         },
                     },
                     {
@@ -668,6 +764,29 @@ class FHIRMCPServer {
                             patientData: object;
                             analysisType?: string
                         });
+
+                case 'fhir_auth_configure':
+                    return await this.oauthToolHandler.configureAuth(args as {
+                            authType?: string;
+                            token?: string;
+                            tokenUrl?: string;
+                            clientId?: string;
+                            clientSecret?: string;
+                            scope?: string;
+                            autoDiscover?: boolean;
+                        });
+
+                case 'fhir_auth_test':
+                    return await this.oauthToolHandler.testAuth();
+
+                case 'fhir_token_status':
+                    return await this.oauthToolHandler.getTokenStatus();
+
+                case 'fhir_token_refresh':
+                    return await this.oauthToolHandler.refreshToken();
+
+                case 'fhir_oauth_discover':
+                    return await this.oauthToolHandler.discoverOAuth(args as { fhirUrl?: string });
 
                 case 'fhir_capability':
                     return await this._getCapability();
@@ -965,6 +1084,7 @@ class FHIRMCPServer {
 
             // Extract resource type from either format
             let resourceType: string;
+
             if (parts[1] === 'resource') {
                 resourceType = parts[2] || ''; // Format 1: prompt://fhir/resource/Patient
             } else {
@@ -980,6 +1100,7 @@ class FHIRMCPServer {
             if (resourcePrompts.length > 0) {
                 // Use the first available prompt for this resource type
                 const prompt = resourcePrompts[0];
+
                 if (prompt) {
                     return {
                         contents: [{
@@ -1018,10 +1139,11 @@ class FHIRMCPServer {
      * @returns Promise resolving to context content
      */
     private async _handleResolvedContextUri(uri: string): Promise<object> {
-        // Parse URI like: context://admission/clinical
+        // Parse URI like: context://admission/clinical or context://fhir/Patient/CarePlan
         const parts = uri.replace('context://', '').split('/');
 
         if (parts.length === 2) {
+            // Format: context://workflow/userType
             const [workflow, userType] = parts;
             const contextPrompt = this.promptManager.getClinicalContextPrompt(undefined, workflow, userType);
 
@@ -1030,6 +1152,23 @@ class FHIRMCPServer {
                     uri,
                     mimeType: 'application/json',
                     text: JSON.stringify({
+                        workflow,
+                        userType,
+                        context: contextPrompt,
+                    }, null, 2),
+                }],
+            };
+        } else if (parts.length === 3 && parts[0] === 'fhir') {
+            // Format: context://fhir/workflow/userType
+            const [, workflow, userType] = parts;
+            const contextPrompt = this.promptManager.getClinicalContextPrompt(undefined, workflow, userType);
+
+            return {
+                contents: [{
+                    uri,
+                    mimeType: 'application/json',
+                    text: JSON.stringify({
+                        type: 'fhir-workflow-context',
                         workflow,
                         userType,
                         context: contextPrompt,
@@ -1087,6 +1226,59 @@ class FHIRMCPServer {
                     }, null, 2),
                 }],
             };
+        case 'security':
+            return {
+                contents: [{
+                    uri,
+                    mimeType: 'application/json',
+                    text: JSON.stringify({
+                        authentication: {
+                            type: this.config.auth?.type || 'none',
+                            hasToken: !!(this.config.auth?.token || this.config.auth?.oauth?.clientId),
+                            oauth: this.config.auth?.oauth ? {
+                                tokenUrl: this.config.auth.oauth.tokenUrl,
+                                hasClientCredentials: !!(this.config.auth.oauth.clientId && this.config.auth.oauth.clientSecret),
+                                scope: this.config.auth.oauth.scope,
+                                autoDiscover: this.config.auth.oauth.autoDiscover
+                            } : null
+                        },
+                        httpHeaders: {
+                            accepts: 'application/fhir+json',
+                            contentType: 'application/json'
+                        },
+                        securityFeatures: ['OAuth 2.0 Client Credentials', 'Bearer Token', 'API Key (deprecated)'],
+                        tlsSupport: true
+                    }, null, 2),
+                }],
+            };
+        case 'documentation':
+            return {
+                contents: [{
+                    uri,
+                    mimeType: 'application/json',
+                    text: JSON.stringify({
+                        fhirVersion: 'R4 (4.0.1)',
+                        specificationUrl: 'http://hl7.org/fhir/R4/',
+                        availableDocumentation: this.documentationProvider.getAvailableResources().map(doc => ({
+                            uri: doc.uri,
+                            name: doc.name,
+                            description: doc.description
+                        })),
+                        supportedFeatures: [
+                            'FHIR R4 specification reference',
+                            'Resource type documentation',
+                            'Data type specifications',
+                            'Search parameter guidance',
+                            'Validation rules and constraints',
+                            'Terminology and value sets'
+                        ],
+                        resources: {
+                            total: 145,
+                            categories: ['Foundation', 'Base', 'Clinical', 'Financial', 'Specialized']
+                        }
+                    }, null, 2),
+                }],
+            };
         default:
             throw new Error(`Unknown config type: ${configType}`);
         }
@@ -1098,40 +1290,106 @@ class FHIRMCPServer {
      * @returns Promise resolving to validation content
      */
     private async _handleResolvedValidationUri(uri: string): Promise<object> {
-        // Parse URI like: validation://Patient/structure
+        // Parse URI like: validation://fhir/Patient/structure or validation://Patient/structure
         const parts = uri.replace('validation://', '').split('/');
 
+        let resourceType: string;
+        let level: string;
+
         if (parts.length === 2) {
-            const [resourceType, level] = parts;
+            // Legacy format: validation://Patient/structure
+            resourceType = parts[0]!;
+            level = parts[1]!;
+        } else if (parts.length === 3 && parts[0] === 'fhir') {
+            // Current format: validation://fhir/Patient/structure
+            resourceType = parts[1]!;
+            level = parts[2]!;
+        } else {
+            throw new Error(`Invalid validation URI format: ${uri}`);
+        }
 
-            if (!resourceType || !level) {
-                throw new Error(`Invalid validation URI format: ${uri}`);
-            }
+        if (!resourceType || !level) {
+            throw new Error(`Invalid validation URI format: ${uri}`);
+        }
 
-            return {
-                contents: [{
-                    uri,
-                    mimeType: 'text/plain',
-                    text: `FHIR ${resourceType} Validation - ${level.toUpperCase()} Level
+        return {
+            contents: [{
+                uri,
+                mimeType: 'text/plain',
+                text: `FHIR ${resourceType} Validation - ${level.toUpperCase()} Level
 
 Resource Type: ${resourceType}
 Validation Level: ${level}
 
-This would contain specific validation guidance for ${resourceType} resources at the ${level} validation level.
+This provides specific validation guidance for ${resourceType} resources at the ${level} validation level.
 
-Common validation points:
+## Validation Focus Areas
+
+**${level.toUpperCase()} Level Validation:**
+${this.getValidationLevelDescription(level)}
+
+## Common Validation Points for ${resourceType}:
 - Required elements and cardinalities
-- Data type constraints
-- Value set bindings
-- Business rule invariants
-- Profile-specific requirements
+- Data type constraints and formats
+- Value set bindings and terminology validation
+- Business rule invariants and constraints
+- Profile-specific requirements and extensions
+- Reference integrity and resource relationships
 
-For detailed validation rules, see: fhir://r4/validation`,
-                }],
-            };
+## Implementation Guidance:
+- Use FHIR validation tools and libraries
+- Implement server-side validation before persistence
+- Provide clear error messages for validation failures
+- Support multiple validation profiles when applicable
+
+For comprehensive validation rules, see: fhir://r4/validation
+For ${resourceType} specification, see: fhir://r4/${resourceType}`,
+            }],
+        };
+    }
+
+    /**
+     * Get detailed description for validation level
+     * @param level Validation level
+     * @returns Description of what that validation level covers
+     */
+    private getValidationLevelDescription(level: string): string {
+        switch (level.toLowerCase()) {
+        case 'structure':
+            return `- Validates basic resource structure and format
+- Checks required elements are present
+- Verifies data types match specification
+- Ensures proper JSON/XML structure`;
+
+        case 'cardinality':
+            return `- Validates element occurrence constraints (0..1, 1..*, etc.)
+- Checks minimum and maximum occurrence rules
+- Verifies required elements are not missing
+- Ensures no excess occurrences of elements`;
+
+        case 'terminology':
+            return `- Validates coded values against value sets
+- Checks terminology bindings (required, extensible, preferred)
+- Verifies code system references
+- Validates concept codes and displays`;
+
+        case 'profile':
+            return `- Validates against specific FHIR profiles
+- Checks profile-specific constraints
+- Verifies extensions and their usage
+- Ensures compliance with implementation guides`;
+
+        case 'invariants':
+            return `- Validates FHIRPath business rule constraints
+- Checks complex cross-element validation rules
+- Verifies conditional requirements
+- Ensures business logic consistency`;
+
+        default:
+            return `- Comprehensive validation covering multiple aspects
+- Checks structural, terminological, and business rules
+- Ensures FHIR specification compliance`;
         }
-
-        throw new Error(`Invalid validation URI format: ${uri}`);
     }
 
     /**
@@ -1140,21 +1398,30 @@ For detailed validation rules, see: fhir://r4/validation`,
      * @returns Promise resolving to examples content
      */
     private async _handleResolvedExamplesUri(uri: string): Promise<object> {
-        // Parse URI like: examples://Patient/search
+        // Parse URI like: examples://fhir/Patient/search or examples://Patient/search
         const parts = uri.replace('examples://', '').split('/');
 
+        let resourceType: string;
+
         if (parts.length === 2) {
-            const [resourceType] = parts;
+            // Legacy format: examples://Patient/search
+            resourceType = parts[0]!;
+        } else if (parts.length === 3 && parts[0] === 'fhir') {
+            // Current format: examples://fhir/Patient/search
+            resourceType = parts[1]!;
+        } else {
+            throw new Error(`Invalid examples URI format: ${uri}`);
+        }
 
-            if (!resourceType) {
-                throw new Error(`Invalid examples URI format: ${uri}`);
-            }
+        if (!resourceType) {
+            throw new Error(`Invalid examples URI format: ${uri}`);
+        }
 
-            return {
-                contents: [{
-                    uri,
-                    mimeType: 'text/plain',
-                    text: `FHIR ${resourceType} Search Examples
+        return {
+            contents: [{
+                uri,
+                mimeType: 'text/plain',
+                text: `FHIR ${resourceType} Search Examples
 
 # Basic Searches
 GET /${resourceType}
@@ -1166,15 +1433,23 @@ ${this._generateResourceSpecificExamples(resourceType)}
 
 # Advanced Patterns
 GET /${resourceType}?_include=${resourceType}:*
+GET /${resourceType}?_revinclude=*:${resourceType.toLowerCase()}
 GET /${resourceType}?_summary=count
+GET /${resourceType}?_summary=text
 GET /${resourceType}?_elements=id,meta,text
 
-For complete search documentation, see: fhir://r4/search`,
-                }],
-            };
-        }
+# Pagination
+GET /${resourceType}?_count=50&_offset=0
+GET /${resourceType}?_page=1
 
-        throw new Error(`Invalid examples URI format: ${uri}`);
+# Complex Queries
+GET /${resourceType}?_filter=status eq 'active'
+GET /${resourceType}?_has:Observation:subject:code=http://loinc.org|8480-6
+
+For complete search documentation, see: fhir://r4/search
+For ${resourceType} specification, see: fhir://r4/${resourceType}`,
+            }],
+        };
     }
 
     /**
@@ -2094,6 +2369,20 @@ GET /${resourceType}?date=ge2021-01-01`;
     }
 
     /**
+     * Get the current AuthManager instance (AuthManagerProvider interface)
+     */
+    getAuthManager(): AuthManager {
+        return this.authManager;
+    }
+
+    /**
+     * Set a new AuthManager instance (AuthManagerProvider interface)
+     */
+    setAuthManager(authManager: AuthManager): void {
+        this.authManager = authManager;
+    }
+
+    /**
      * Executes HTTP request to the FHIR server
      * @param url Request URL path
      * @param method HTTP method
@@ -2102,6 +2391,9 @@ GET /${resourceType}?date=ge2021-01-01`;
      */
     private async _executeRequest(url: string, method: string, payload?: object): Promise<object> {
 
+        // Get authentication headers
+        const authHeaders = await this.authManager.getAuthHeaders();
+
         const config = {
             baseURL: this.config.url,
             method,
@@ -2109,6 +2401,7 @@ GET /${resourceType}?date=ge2021-01-01`;
             headers: {
                 'Accept': 'application/fhir+json',
                 'Content-Type': 'application/json',
+                ...authHeaders,
             },
         };
 
