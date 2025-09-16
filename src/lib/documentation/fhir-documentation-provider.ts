@@ -26,6 +26,11 @@ export class FHIRDocumentationProvider {
      * @returns Documentation resource content
      */
     public async getFHIRDocumentation(uri: string): Promise<object> {
+
+        if (!uri || typeof uri !== 'string') {
+            throw new Error(`Unknown FHIR documentation resource: ${uri}`);
+        }
+
         switch (uri) {
         case 'fhir://r4/specification':
             return this.getSpecificationOverview();
@@ -40,6 +45,12 @@ export class FHIRDocumentationProvider {
         case 'fhir://r4/terminology':
             return this.getTerminology();
         default:
+            // Check if it's a specific resource type request (e.g., fhir://r4/Patient)
+            if (uri.startsWith('fhir://r4/') && uri.length > 'fhir://r4/'.length) {
+                const resourceType = uri.substring('fhir://r4/'.length);
+                return this.getResourceTypeDocumentation(resourceType);
+            }
+            
             throw new Error(`Unknown FHIR documentation resource: ${uri}`);
         }
     }
@@ -87,6 +98,93 @@ export class FHIRDocumentationProvider {
                 mimeType: 'application/json',
             },
         ];
+    }
+
+    /**
+     * Get documentation for a specific FHIR resource type
+     * @param resourceType The FHIR resource type (e.g., "Patient", "Observation")
+     * @returns Documentation for the specific resource type
+     */
+    private getResourceTypeDocumentation(resourceType: string): object {
+        // Get the resource types data from our existing method
+        const resourceTypesData = this.getResourceTypes() as any;
+        const resourceTypes = resourceTypesData.contents[0].text ?
+            JSON.parse(resourceTypesData.contents[0].text).resourceTypes : {};
+
+        // Search for the resource type across all categories
+        let resourceInfo: any = null;
+        let category = '';
+
+        for (const [cat, resources] of Object.entries(resourceTypes)) {
+            if (resources && typeof resources === 'object') {
+                const resourcesObj = resources as Record<string, any>;
+
+                if (resourcesObj[resourceType]) {
+                    resourceInfo = resourcesObj[resourceType];
+                    category = cat;
+                    break;
+                }
+            }
+        }
+
+        if (!resourceInfo) {
+            throw new Error(`FHIR resource type '${resourceType}' not found in R4 specification`);
+        }
+
+        return {
+            contents: [{
+                uri: `fhir://r4/${resourceType}`,
+                mimeType: 'text/plain',
+                text: `# FHIR R4 ${resourceType} Resource Documentation
+
+## Resource Type: ${resourceType}
+**Category**: ${category}
+**Description**: ${resourceInfo.description}
+
+## Official Specification
+**URL**: ${resourceInfo.url}
+
+## Key Information
+
+The ${resourceType} resource is part of the FHIR R4 specification and belongs to the **${category}** category of resources.
+
+${resourceInfo.description}
+
+## Implementation Notes
+
+- **Base URL**: All ${resourceType} resources follow the RESTful pattern: [base]/${resourceType}
+- **Resource ID**: Each ${resourceType} has a unique logical ID within the server
+- **Search Parameters**: Use resource-specific search parameters for queries
+- **Validation**: Must conform to ${resourceType} resource constraints and profiles
+
+## Common Operations
+
+### Create
+\`POST [base]/${resourceType}\`
+
+### Read
+\`GET [base]/${resourceType}/[id]\`
+
+### Update
+\`PUT [base]/${resourceType}/[id]\`
+
+### Delete
+\`DELETE [base]/${resourceType}/[id]\`
+
+### Search
+\`GET [base]/${resourceType}?[parameters]\`
+
+## Related Resources
+
+For complete implementation guidance, refer to:
+- **Full ${resourceType} specification**: ${resourceInfo.url}
+- **FHIR R4 implementation guide**: ${FHIRDocumentationProvider.FHIR_BASE_URL}/implementation.html
+- **Search parameters**: ${FHIRDocumentationProvider.FHIR_BASE_URL}/searchparameter-registry.html
+- **Resource examples**: ${resourceInfo.url}#examples
+
+Version: R4 (${FHIRDocumentationProvider.FHIR_VERSION})`,
+            }],
+        };
     }
 
     private getSpecificationOverview(): object {

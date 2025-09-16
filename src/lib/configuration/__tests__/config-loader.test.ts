@@ -74,6 +74,9 @@ describe('Configuration Loader Module', () => {
                     url: 'https://config-file.example.com',
                     timeout: 45000,
                     apiKey: 'config-file-api-key',
+                    auth: {
+                        type: 'none',
+                    },
                 });
                 expect(consoleErrorSpy).toHaveBeenCalledWith('Loaded config from mcp-config.json');
             });
@@ -92,6 +95,9 @@ describe('Configuration Loader Module', () => {
                     url: 'https://minimal-config.example.com',
                     timeout: 30000,
                     apiKey: undefined,
+                    auth: {
+                        type: 'none',
+                    },
                 });
             });
 
@@ -160,6 +166,9 @@ describe('Configuration Loader Module', () => {
                 expect(config).toEqual({
                     url: 'https://fallback.example.com',
                     timeout: 30000,
+                    auth: {
+                        type: 'none',
+                    },
                 });
             });
 
@@ -180,6 +189,9 @@ describe('Configuration Loader Module', () => {
                 expect(config).toEqual({
                     url: 'https://fallback-error.example.com',
                     timeout: 30000,
+                    auth: {
+                        type: 'none',
+                    },
                 });
             });
 
@@ -196,6 +208,9 @@ describe('Configuration Loader Module', () => {
                     url: undefined, // No URL in empty config
                     timeout: 30000,
                     apiKey: undefined,
+                    auth: {
+                        type: 'none',
+                    },
                 });
             });
         });
@@ -217,6 +232,9 @@ describe('Configuration Loader Module', () => {
                     url: 'https://env.example.com',
                     timeout: 60000,
                     apiKey: 'env-api-key',
+                    auth: {
+                        type: 'none',
+                    },
                 });
             });
 
@@ -228,6 +246,9 @@ describe('Configuration Loader Module', () => {
                 expect(config).toEqual({
                     url: 'https://cli.example.com',
                     timeout: 30000,
+                    auth: {
+                        type: 'none',
+                    },
                 });
             });
 
@@ -300,6 +321,9 @@ describe('Configuration Loader Module', () => {
                     url: 'https://file-priority.example.com',
                     timeout: 99999,
                     apiKey: 'file-priority-key',
+                    auth: {
+                        type: 'none',
+                    },
                 });
             });
 
@@ -345,6 +369,9 @@ describe('Configuration Loader Module', () => {
                     url: 'https://complex.example.com/fhir/R4',
                     timeout: 75000,
                     apiKey: 'complex-api-key-with-special-chars!@#$',
+                    auth: {
+                        type: 'none',
+                    },
                 });
             });
 
@@ -434,6 +461,9 @@ describe('Configuration Loader Module', () => {
                     url: 'https://whitespace.example.com',
                     timeout: 40000,
                     apiKey: undefined,
+                    auth: {
+                        type: 'none',
+                    },
                 });
             });
         });

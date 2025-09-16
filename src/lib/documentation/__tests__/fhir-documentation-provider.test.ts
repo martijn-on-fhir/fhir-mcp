@@ -186,10 +186,52 @@ describe('FHIR Documentation Provider', () => {
             expect(parsedContent.commonValueSets).toHaveProperty('observation-status');
         });
 
+        it('should return specific resource type documentation for fhir://r4/Patient', async () => {
+            const result = await provider.getFHIRDocumentation('fhir://r4/Patient');
+
+            expect(result).toHaveProperty('contents');
+            expect(Array.isArray((result as any).contents)).toBe(true);
+            expect((result as any).contents).toHaveLength(1);
+
+            const content = (result as any).contents[0];
+            expect(content).toHaveProperty('uri', 'fhir://r4/Patient');
+            expect(content).toHaveProperty('mimeType', 'text/plain');
+            expect(content).toHaveProperty('text');
+            expect(typeof content.text).toBe('string');
+            expect(content.text).toContain('FHIR R4 Patient Resource Documentation');
+            expect(content.text).toContain('Resource Type: Patient');
+            expect(content.text).toContain('**Category**: base');
+            expect(content.text).toContain('Demographics and other administrative information');
+            expect(content.text).toContain('https://hl7.org/fhir/R4/patient.html');
+            expect(content.text).toContain('Common Operations');
+            expect(content.text).toContain('POST [base]/Patient');
+            expect(content.text).toContain('GET [base]/Patient/[id]');
+        });
+
+        it('should return specific resource type documentation for fhir://r4/Observation', async () => {
+            const result = await provider.getFHIRDocumentation('fhir://r4/Observation');
+
+            expect(result).toHaveProperty('contents');
+            const content = (result as any).contents[0];
+            expect(content).toHaveProperty('uri', 'fhir://r4/Observation');
+            expect(content).toHaveProperty('mimeType', 'text/plain');
+            expect(content.text).toContain('FHIR R4 Observation Resource Documentation');
+            expect(content.text).toContain('Resource Type: Observation');
+            expect(content.text).toContain('**Category**: clinical');
+            expect(content.text).toContain('Measurements and simple assertions');
+            expect(content.text).toContain('https://hl7.org/fhir/R4/observation.html');
+        });
+
+        it('should throw error for unknown resource type', async () => {
+            await expect(provider.getFHIRDocumentation('fhir://r4/NonExistentResource'))
+                .rejects
+                .toThrow('FHIR resource type \'NonExistentResource\' not found in R4 specification');
+        });
+
         it('should throw error for unknown documentation resource', async () => {
             await expect(provider.getFHIRDocumentation('fhir://r4/unknown'))
                 .rejects
-                .toThrow('Unknown FHIR documentation resource: fhir://r4/unknown');
+                .toThrow('FHIR resource type \'unknown\' not found in R4 specification');
         });
 
         it('should throw error for invalid URI format', async () => {
@@ -420,7 +462,7 @@ describe('FHIR Documentation Provider', () => {
         it('should handle case-sensitive URI matching', async () => {
             await expect(provider.getFHIRDocumentation('fhir://r4/SPECIFICATION'))
                 .rejects
-                .toThrow('Unknown FHIR documentation resource: fhir://r4/SPECIFICATION');
+                .toThrow('FHIR resource type \'SPECIFICATION\' not found in R4 specification');
         });
 
         it('should handle URI with extra spaces', async () => {

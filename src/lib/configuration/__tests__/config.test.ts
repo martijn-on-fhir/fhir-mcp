@@ -194,6 +194,9 @@ describe('Configuration Module', () => {
                     url: 'https://complete.example.com',
                     timeout: 60000,
                     apiKey: 'complete-api-key',
+                    auth: {
+                        type: 'none',
+                    },
                 });
             });
 
@@ -205,6 +208,9 @@ describe('Configuration Module', () => {
                 expect(config).toEqual({
                     url: 'https://minimal.example.com',
                     timeout: 30000,
+                    auth: {
+                        type: 'none',
+                    },
                 });
                 expect(config.apiKey).toBeUndefined();
             });
@@ -220,6 +226,9 @@ describe('Configuration Module', () => {
                 expect(config).toEqual({
                     url: 'https://mixed.example.com', // from env
                     timeout: 45000, // from env
+                    auth: {
+                        type: 'none',
+                    },
                 });
                 expect(config.apiKey).toBeUndefined();
             });

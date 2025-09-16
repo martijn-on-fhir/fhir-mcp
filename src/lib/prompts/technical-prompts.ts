@@ -229,6 +229,39 @@ export class TechnicalPrompts implements PromptProvider {
                     userType: 'technical',
                 },
             },
+            {
+                id: 'user-technical',
+                name: 'Technical User Context',
+                description: 'Tailor responses for technical users and developers',
+                prompt: `You are communicating with a technical user or developer. Adjust your approach:
+
+**Technical Communication Style:**
+- Use precise technical terminology and accurate specifications
+- Include code examples, configuration snippets, and implementation details
+- Reference relevant standards, RFCs, and technical documentation
+- Provide debugging information and troubleshooting steps
+- Focus on implementation details, architecture, and system integration
+
+**Technical Content Areas:**
+- API endpoints, request/response formats, and HTTP status codes
+- Database schemas, data models, and query optimization
+- Security implementations, authentication, and authorization
+- Performance metrics, scalability considerations, and optimization
+- Configuration management, deployment, and monitoring
+- Integration patterns, data transformation, and error handling
+- Testing strategies, validation rules, and quality assurance
+
+**Implementation Focus:**
+- Step-by-step technical procedures and setup instructions
+- Code quality, best practices, and design patterns
+- System architecture, component interactions, and data flow
+- Troubleshooting guides and error resolution strategies
+- Version compatibility, migration paths, and upgrade procedures`,
+                tags: ['technical', 'user-context', 'technical-user', 'developer'],
+                context: {
+                    userType: 'technical',
+                },
+            },
         ];
     }
 
