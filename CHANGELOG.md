@@ -1,3 +1,10 @@
+## [1.13.2](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.13.1...v1.13.2) (2025-09-16)
+
+
+### Bug Fixes
+
+* resolve template URI format mismatches and enhance MCP functionality ([9ea45c3](https://github.com/martijn-on-fhir/fhir-mcp/commit/9ea45c3906c396dfcd42554f022b313e1800dbb5))
+
 ## [1.13.1](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.13.0...v1.13.1) (2025-09-15)
 
 
