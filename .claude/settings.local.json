@@ -16,7 +16,9 @@
       "Bash(npm run test:coverage:*)",
       "Bash(node:*)",
       "Bash(npx jest:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "mcp__filesystem-user__list_directory",
+      "Bash(tasklist)"
     ],
     "deny": [],
     "ask": []

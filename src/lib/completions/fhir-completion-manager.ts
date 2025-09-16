@@ -40,7 +40,7 @@ export class FHIRCompletionManager {
      */
     async handleCompletion(params: CompletionRequest): Promise<CompletionResult> {
 
-        const { ref, argument } = params;
+        const {ref, argument} = params;
 
         // Support both ref and argument formats
         let paramName: string;
@@ -85,14 +85,16 @@ export class FHIRCompletionManager {
             return this.getDocTypeCompletions(currentValue);
         case 'level':
             return this.getLevelCompletions(currentValue);
-        default:
+
+        default: {
+
             // For unrecognized parameters, try to provide intelligent fallbacks
 
             // Check if the current value looks like a FHIR resource type
             const fhirResourceTypes = this.getFhirResourceTypes();
             const isResourceTypeLike = currentValue && fhirResourceTypes.some(rt =>
                 rt.toLowerCase().startsWith(currentValue.toLowerCase()) ||
-                currentValue.toLowerCase().startsWith(rt.toLowerCase())
+                    currentValue.toLowerCase().startsWith(rt.toLowerCase())
             );
 
             if (isResourceTypeLike || currentValue.toLowerCase().includes('patient')) {
@@ -105,6 +107,8 @@ export class FHIRCompletionManager {
             }
 
             return this.createEmptyCompletion();
+        }
+
         }
     }
 
@@ -354,7 +358,7 @@ export class FHIRCompletionManager {
             'treatment-planning',
             'documentation-guide',
             'workflow-optimization',
-            'compliance-check'
+            'compliance-check',
         ];
 
         const matches = promptIds.filter(promptId =>
@@ -376,7 +380,7 @@ export class FHIRCompletionManager {
             'medication-review',
             'care-planning',
             'billing',
-            'scheduling'
+            'scheduling',
         ];
 
         const matches = workflows.filter(workflow =>
@@ -395,7 +399,7 @@ export class FHIRCompletionManager {
         const userTypes = [
             'clinical',
             'patient',
-            'technical'
+            'technical',
         ];
 
         const matches = userTypes.filter(userType =>
@@ -416,7 +420,7 @@ export class FHIRCompletionManager {
             'fhir',
             'security',
             'prompts',
-            'documentation'
+            'documentation',
         ];
 
         const matches = configTypes.filter(configType =>
@@ -438,7 +442,7 @@ export class FHIRCompletionManager {
             'datatypes',
             'search',
             'validation',
-            'terminology'
+            'terminology',
         ];
 
         const matches = docTypes.filter(docType =>
@@ -459,7 +463,7 @@ export class FHIRCompletionManager {
             'cardinality',
             'terminology',
             'profile',
-            'invariants'
+            'invariants',
         ];
 
         const matches = levels.filter(level =>
@@ -479,7 +483,7 @@ export class FHIRCompletionManager {
             'clinical',
             'security',
             'technical',
-            'workflow'
+            'workflow',
         ];
 
         const matches = categories.filter(category =>

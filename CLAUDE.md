@@ -37,6 +37,54 @@ The FHIR MCP server can be configured via:
 - Environment variable: `FHIR_URL`
 - Command line argument: `npm start <url>`
 - Environment file: `.env` (copy from `.env.example`)
+- Configuration file: `mcp-config.json`
+
+### Authentication
+
+The server supports three authentication modes:
+
+1. **None** (default) - No authentication
+2. **Bearer Token** - Static bearer token authentication
+3. **OAuth 2.0 Client Credentials** - Dynamic OAuth token management
+
+#### Environment Variables
+
+```bash
+# Authentication type: none, bearer, or client_credentials
+FHIR_AUTH_TYPE=none
+
+# Bearer token authentication
+FHIR_AUTH_TOKEN=your-bearer-token
+
+# OAuth 2.0 client credentials
+FHIR_OAUTH_TOKEN_URL=https://auth.server.com/oauth/token
+FHIR_OAUTH_CLIENT_ID=your-client-id
+FHIR_OAUTH_CLIENT_SECRET=your-client-secret
+FHIR_OAUTH_SCOPE=user/*.read
+FHIR_OAUTH_AUTO_DISCOVER=true  # Auto-discover from FHIR server
+
+# Legacy API key support (deprecated - use FHIR_AUTH_TOKEN instead)
+FHIR_API_KEY=your-api-key
+```
+
+#### Configuration File (mcp-config.json)
+
+```json
+{
+  "url": "http://localhost:3000/fhir",
+  "timeout": 30000,
+  "auth": {
+    "type": "client_credentials",
+    "oauth": {
+      "tokenUrl": "https://auth.server.com/oauth/token",
+      "clientId": "your-client-id",
+      "clientSecret": "your-client-secret",
+      "scope": "user/*.read",
+      "autoDiscover": false
+    }
+  }
+}
+```
 
 ## MCP Server Configuration
 
@@ -56,7 +104,49 @@ Add this to your Claude Desktop configuration file:
 }
 ```
 
-Or using environment variable only:
+### With OAuth Authentication:
+
+```json
+{
+  "mcpServers": {
+    "fhir": {
+      "command": "node",
+      "args": ["C:/projects/fhir-mcp/dist/index.js"],
+      "env": {
+        "FHIR_URL": "https://your-fhir-server.com/fhir",
+        "FHIR_AUTH_TYPE": "client_credentials",
+        "FHIR_OAUTH_TOKEN_URL": "https://auth.server.com/oauth/token",
+        "FHIR_OAUTH_CLIENT_ID": "your-client-id",
+        "FHIR_OAUTH_CLIENT_SECRET": "your-client-secret",
+        "FHIR_OAUTH_SCOPE": "user/*.read",
+        "USE_DUTCH_PROFILES": "true"
+      }
+    }
+  }
+}
+```
+
+### With Bearer Token:
+
+```json
+{
+  "mcpServers": {
+    "fhir": {
+      "command": "node",
+      "args": ["C:/projects/fhir-mcp/dist/index.js"],
+      "env": {
+        "FHIR_URL": "https://your-fhir-server.com/fhir",
+        "FHIR_AUTH_TYPE": "bearer",
+        "FHIR_AUTH_TOKEN": "your-bearer-token",
+        "USE_DUTCH_PROFILES": "true"
+      }
+    }
+  }
+}
+```
+
+### Basic Configuration (no auth):
+
 ```json
 {
   "mcpServers": {
@@ -72,6 +162,16 @@ Or using environment variable only:
   }
 }
 ```
+
+## OAuth Management Tools
+
+The server provides built-in tools for OAuth configuration and management:
+
+- `fhir_auth_configure` - Configure authentication settings
+- `fhir_auth_test` - Test current authentication configuration
+- `fhir_token_status` - Check OAuth token status and expiry
+- `fhir_token_refresh` - Force refresh OAuth tokens
+- `fhir_oauth_discover` - Auto-discover OAuth endpoints from FHIR server
 
 ## Testing
 

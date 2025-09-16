@@ -30,6 +30,251 @@ FHIR_API_KEY=your-api-key
 FHIR_TIMEOUT=30000
 ```
 
+## Authentication
+
+The FHIR MCP Server includes a **comprehensive OAuth authentication system** supporting multiple authentication modes for secure FHIR server connections.
+
+### 🔐 **Authentication Modes**
+
+#### **1. None (Default)**
+No authentication required - suitable for development and open FHIR servers:
+```bash
+FHIR_AUTH_TYPE=none
+```
+
+#### **2. Bearer Token Authentication**
+Static bearer token for API access:
+```bash
+FHIR_AUTH_TYPE=bearer
+FHIR_AUTH_TOKEN=your-bearer-token
+```
+
+#### **3. OAuth 2.0 Client Credentials**
+Dynamic OAuth token management with automatic refresh:
+```bash
+FHIR_AUTH_TYPE=client_credentials
+FHIR_OAUTH_TOKEN_URL=https://auth.server.com/oauth/token
+FHIR_OAUTH_CLIENT_ID=your-client-id
+FHIR_OAUTH_CLIENT_SECRET=your-client-secret
+FHIR_OAUTH_SCOPE=user/*.read
+FHIR_OAUTH_AUTO_DISCOVER=true
+```
+
+### 🛠️ **OAuth Configuration Options**
+
+#### **Environment Variables**
+```bash
+# Authentication type
+FHIR_AUTH_TYPE=client_credentials  # none | bearer | client_credentials
+
+# Bearer token authentication
+FHIR_AUTH_TOKEN=your-bearer-token
+
+# OAuth 2.0 client credentials
+FHIR_OAUTH_TOKEN_URL=https://auth.server.com/oauth/token
+FHIR_OAUTH_CLIENT_ID=your-client-id
+FHIR_OAUTH_CLIENT_SECRET=your-client-secret
+FHIR_OAUTH_SCOPE=user/*.read
+FHIR_OAUTH_AUTO_DISCOVER=true
+
+# Legacy API key support (deprecated - use FHIR_AUTH_TOKEN instead)
+FHIR_API_KEY=your-api-key
+```
+
+#### **Configuration File (mcp-config.json)**
+```json
+{
+  "url": "https://your-fhir-server.com/fhir",
+  "timeout": 30000,
+  "auth": {
+    "type": "client_credentials",
+    "oauth": {
+      "tokenUrl": "https://auth.server.com/oauth/token",
+      "clientId": "your-client-id",
+      "clientSecret": "your-client-secret",
+      "scope": "user/*.read",
+      "autoDiscover": false
+    }
+  }
+}
+```
+
+#### **Claude Desktop Configuration Examples**
+
+**With OAuth 2.0 Client Credentials:**
+```json
+{
+  "mcpServers": {
+    "fhir": {
+      "command": "node",
+      "args": ["/path/to/fhir-mcp/dist/index.js"],
+      "env": {
+        "FHIR_URL": "https://your-fhir-server.com/fhir",
+        "FHIR_AUTH_TYPE": "client_credentials",
+        "FHIR_OAUTH_TOKEN_URL": "https://auth.server.com/oauth/token",
+        "FHIR_OAUTH_CLIENT_ID": "your-client-id",
+        "FHIR_OAUTH_CLIENT_SECRET": "your-client-secret",
+        "FHIR_OAUTH_SCOPE": "user/*.read"
+      }
+    }
+  }
+}
+```
+
+**With Bearer Token:**
+```json
+{
+  "mcpServers": {
+    "fhir": {
+      "command": "node",
+      "args": ["/path/to/fhir-mcp/dist/index.js"],
+      "env": {
+        "FHIR_URL": "https://your-fhir-server.com/fhir",
+        "FHIR_AUTH_TYPE": "bearer",
+        "FHIR_AUTH_TOKEN": "your-bearer-token"
+      }
+    }
+  }
+}
+```
+
+### 🚀 **OAuth Management Tools**
+
+The server provides built-in tools for OAuth configuration and management:
+
+#### **`fhir_auth_configure`**
+Configure authentication settings dynamically:
+```javascript
+{
+  "tool": "fhir_auth_configure",
+  "args": {
+    "authType": "client_credentials",
+    "tokenUrl": "https://auth.server.com/oauth/token",
+    "clientId": "your-client-id",
+    "clientSecret": "your-client-secret",
+    "scope": "user/*.read"
+  }
+}
+```
+
+#### **`fhir_auth_test`**
+Test current authentication configuration:
+```javascript
+{
+  "tool": "fhir_auth_test"
+}
+```
+
+#### **`fhir_token_status`**
+Check OAuth token status and expiry:
+```javascript
+{
+  "tool": "fhir_token_status"
+}
+```
+
+#### **`fhir_token_refresh`**
+Force refresh OAuth tokens:
+```javascript
+{
+  "tool": "fhir_token_refresh"
+}
+```
+
+#### **`fhir_oauth_discover`**
+Auto-discover OAuth endpoints from FHIR server:
+```javascript
+{
+  "tool": "fhir_oauth_discover",
+  "args": {
+    "fhirUrl": "https://your-fhir-server.com/fhir"
+  }
+}
+```
+
+### 🔧 **Advanced OAuth Features**
+
+#### **Automatic Token Management**
+- **Token Caching**: Access tokens cached for performance
+- **Automatic Refresh**: Tokens refreshed before expiry (5-minute safety margin)
+- **Error Handling**: Robust error recovery and retry logic
+
+#### **SMART on FHIR Auto-Discovery**
+Automatically discover OAuth endpoints from FHIR server `.well-known` configuration:
+```bash
+FHIR_OAUTH_AUTO_DISCOVER=true
+```
+
+Searches these endpoints automatically:
+- `{fhirUrl}/.well-known/smart_configuration`
+- `{fhirUrl}/.well-known/smart-configuration`
+- `{baseUrl}/.well-known/smart_configuration`
+
+#### **Security Features**
+- **Secure Token Storage**: Tokens stored only in memory, never persisted
+- **Connection Security**: HTTPS enforcement for OAuth endpoints
+- **Timeout Handling**: Configurable timeouts for token requests
+- **Error Recovery**: Graceful degradation on authentication failures
+
+### ✅ **Authentication Benefits**
+
+✅ **Multiple Auth Modes**: Support for none, bearer token, and OAuth 2.0 client credentials
+✅ **Automatic Token Management**: Background token refresh with caching
+✅ **SMART on FHIR Compatible**: Auto-discovery of OAuth endpoints
+✅ **Dynamic Configuration**: Runtime authentication configuration changes
+✅ **Comprehensive Testing**: Built-in tools for testing authentication
+✅ **Secure Implementation**: Industry-standard OAuth 2.0 compliance
+✅ **Easy Integration**: Simple environment variable configuration
+✅ **Production Ready**: Robust error handling and token management
+
+### 🔍 **Troubleshooting Authentication**
+
+#### **Common Issues**
+
+**Invalid Client Credentials:**
+```json
+{
+  "error": "OAuth token request failed: invalid_client"
+}
+```
+- Verify `FHIR_OAUTH_CLIENT_ID` and `FHIR_OAUTH_CLIENT_SECRET`
+- Check client credentials with OAuth provider
+
+**Token Endpoint Not Found:**
+```json
+{
+  "error": "Could not discover OAuth endpoints for FHIR server"
+}
+```
+- Set `FHIR_OAUTH_TOKEN_URL` manually
+- Verify FHIR server supports SMART on FHIR
+
+**Expired Bearer Token:**
+```json
+{
+  "error": "Request failed: 401 Unauthorized"
+}
+```
+- Update `FHIR_AUTH_TOKEN` with valid token
+- Consider switching to OAuth 2.0 for automatic refresh
+
+#### **Testing Authentication**
+
+Test your authentication setup:
+```bash
+# Test with bearer token
+FHIR_AUTH_TYPE=bearer FHIR_AUTH_TOKEN=your-token npm start
+
+# Test with OAuth
+FHIR_AUTH_TYPE=client_credentials \
+FHIR_OAUTH_CLIENT_ID=your-id \
+FHIR_OAUTH_CLIENT_SECRET=your-secret \
+FHIR_OAUTH_TOKEN_URL=https://auth.server.com/oauth/token \
+npm start
+```
+
+The OAuth authentication system ensures secure, standards-compliant access to FHIR servers while providing flexibility for different deployment scenarios.
+
 ## Installation
 
 ```bash
@@ -83,6 +328,13 @@ npm start https://your-fhir-server.com/fhir
 - `fhir_list_prompts`: List available contextual prompts by tag or resource type
 - `fhir_get_prompt`: Get specific prompts with parameter substitution
 - `fhir_context_prompt`: Get contextual prompts for clinical workflows
+
+### OAuth Authentication Management
+- `fhir_auth_configure`: Configure authentication settings dynamically
+- `fhir_auth_test`: Test current authentication configuration
+- `fhir_token_status`: Check OAuth token status and expiry
+- `fhir_token_refresh`: Force refresh OAuth tokens
+- `fhir_oauth_discover`: Auto-discover OAuth endpoints from FHIR server
 
 ### Configuration & Utilities
 - `get_config`: Get current server configuration
@@ -1042,6 +1294,7 @@ The notification system provides unprecedented visibility into FHIR operations, 
 ### Features & Capabilities
 
 ✅ **Core FHIR Operations** - Full CRUD operations with validation
+✅ **OAuth Authentication System** - Comprehensive authentication with support for none, bearer token, and OAuth 2.0 client credentials with automatic token management
 ✅ **FHIR Auto-Completion System** - Intelligent completion for resource types, search parameters, status values, and code systems with MCP specification compliance
 ✅ **Interactive Elicitation System** - Guided user input collection with healthcare context and validation
 ✅ **AI-Powered Clinical Insights** - MCP sampling integration for intelligent clinical analysis, care gap identification, and decision support
