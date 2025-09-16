@@ -1239,15 +1239,15 @@ class FHIRMCPServer implements AuthManagerProvider {
                                 tokenUrl: this.config.auth.oauth.tokenUrl,
                                 hasClientCredentials: !!(this.config.auth.oauth.clientId && this.config.auth.oauth.clientSecret),
                                 scope: this.config.auth.oauth.scope,
-                                autoDiscover: this.config.auth.oauth.autoDiscover
-                            } : null
+                                autoDiscover: this.config.auth.oauth.autoDiscover,
+                            } : null,
                         },
                         httpHeaders: {
                             accepts: 'application/fhir+json',
-                            contentType: 'application/json'
+                            contentType: 'application/json',
                         },
                         securityFeatures: ['OAuth 2.0 Client Credentials', 'Bearer Token', 'API Key (deprecated)'],
-                        tlsSupport: true
+                        tlsSupport: true,
                     }, null, 2),
                 }],
             };
@@ -1262,7 +1262,7 @@ class FHIRMCPServer implements AuthManagerProvider {
                         availableDocumentation: this.documentationProvider.getAvailableResources().map(doc => ({
                             uri: doc.uri,
                             name: doc.name,
-                            description: doc.description
+                            description: doc.description,
                         })),
                         supportedFeatures: [
                             'FHIR R4 specification reference',
@@ -1270,12 +1270,12 @@ class FHIRMCPServer implements AuthManagerProvider {
                             'Data type specifications',
                             'Search parameter guidance',
                             'Validation rules and constraints',
-                            'Terminology and value sets'
+                            'Terminology and value sets',
                         ],
                         resources: {
                             total: 145,
-                            categories: ['Foundation', 'Base', 'Clinical', 'Financial', 'Specialized']
-                        }
+                            categories: ['Foundation', 'Base', 'Clinical', 'Financial', 'Specialized'],
+                        },
                     }, null, 2),
                 }],
             };

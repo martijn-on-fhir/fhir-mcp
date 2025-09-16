@@ -459,7 +459,7 @@ describe('FHIRCompletionManager', () => {
     describe('handleCompletion with all template parameters', () => {
         it('should return workflow completions for workflow parameter', async () => {
             const result = await completionManager.handleCompletion({
-                argument: { name: 'workflow', value: 'a' }
+                argument: { name: 'workflow', value: 'a' },
             });
 
             expect(result.completion.values).toContain('admission');
@@ -468,7 +468,7 @@ describe('FHIRCompletionManager', () => {
 
         it('should return userType completions for userType parameter', async () => {
             const result = await completionManager.handleCompletion({
-                argument: { name: 'userType', value: 'c' }
+                argument: { name: 'userType', value: 'c' },
             });
 
             expect(result.completion.values).toContain('clinical');
@@ -477,7 +477,7 @@ describe('FHIRCompletionManager', () => {
 
         it('should return configType completions for configType parameter', async () => {
             const result = await completionManager.handleCompletion({
-                argument: { name: 'configType', value: 'f' }
+                argument: { name: 'configType', value: 'f' },
             });
 
             expect(result.completion.values).toContain('fhir');
@@ -486,7 +486,7 @@ describe('FHIRCompletionManager', () => {
 
         it('should return docType completions for docType parameter', async () => {
             const result = await completionManager.handleCompletion({
-                argument: { name: 'docType', value: 's' }
+                argument: { name: 'docType', value: 's' },
             });
 
             expect(result.completion.values).toContain('specification');
@@ -496,7 +496,7 @@ describe('FHIRCompletionManager', () => {
 
         it('should return level completions for level parameter', async () => {
             const result = await completionManager.handleCompletion({
-                argument: { name: 'level', value: 'p' }
+                argument: { name: 'level', value: 'p' },
             });
 
             expect(result.completion.values).toContain('profile');
@@ -505,7 +505,7 @@ describe('FHIRCompletionManager', () => {
 
         it('should return category completions for category parameter', async () => {
             const result = await completionManager.handleCompletion({
-                argument: { name: 'category', value: 'c' }
+                argument: { name: 'category', value: 'c' },
             });
 
             expect(result.completion.values).toContain('clinical');

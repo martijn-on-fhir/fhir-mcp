@@ -7,7 +7,7 @@
  * - client_credentials: OAuth 2.0 client credentials flow
  */
 
-import axios, { AxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import { AuthConfig } from '../configuration/config.js';
 
 export interface TokenResponse {
@@ -99,8 +99,11 @@ export class AuthManager {
         }
 
         const tokenRequest = {
+            // eslint-disable-next-line camelcase
             grant_type: 'client_credentials',
+            // eslint-disable-next-line camelcase
             client_id: clientId,
+            // eslint-disable-next-line camelcase
             client_secret: clientSecret,
             ...(scope && { scope }),
         };
@@ -117,16 +120,19 @@ export class AuthManager {
                 }
             );
 
+            // eslint-disable-next-line camelcase,@typescript-eslint/naming-convention
             const { access_token, expires_in } = response.data;
 
-            // Cache token with expiry
+            // eslint-disable-next-line camelcase
             this.cachedToken = access_token;
 
+            // eslint-disable-next-line camelcase
             if (expires_in) {
-                // Set expiry 5 minutes before actual expiry for safety
+                // eslint-disable-next-line camelcase
                 this.tokenExpiry = new Date(Date.now() + (expires_in - 300) * 1000);
             }
 
+            // eslint-disable-next-line camelcase
             return access_token;
 
         } catch (error) {
@@ -165,7 +171,7 @@ export class AuthManager {
                 if (config.token_endpoint) {
                     return config.token_endpoint;
                 }
-            } catch (error) {
+            } catch {
                 // Continue to next URL
                 continue;
             }

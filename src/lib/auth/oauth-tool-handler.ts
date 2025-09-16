@@ -35,6 +35,7 @@ export class OAuthToolHandler {
     constructor(authManager: AuthManager, config: ServerConfig, authManagerProvider?: AuthManagerProvider) {
         this.authManager = authManager;
         this.config = config;
+
         if (authManagerProvider) {
             this.authManagerProvider = authManagerProvider;
         }
@@ -76,7 +77,7 @@ export class OAuthToolHandler {
 
             // Build new auth configuration
             const newAuthConfig: AuthConfig = {
-                type: (authType as AuthConfig['type']) || this.config.auth?.type || 'none'
+                type: (authType as AuthConfig['type']) || this.config.auth?.type || 'none',
             };
 
             // Add token for bearer auth
@@ -91,7 +92,7 @@ export class OAuthToolHandler {
                     ...(clientId && { clientId }),
                     ...(clientSecret && { clientSecret }),
                     ...(scope && { scope }),
-                    ...(autoDiscover !== undefined && { autoDiscover })
+                    ...(autoDiscover !== undefined && { autoDiscover }),
                 };
             }
 
@@ -108,21 +109,21 @@ export class OAuthToolHandler {
                             configuration: {
                                 type: newAuthConfig.type,
                                 hasToken: !!newAuthConfig.token,
-                                hasOAuthConfig: !!newAuthConfig.oauth
-                            }
-                        }, null, 2)
-                    }
-                ]
+                                hasOAuthConfig: !!newAuthConfig.oauth,
+                            },
+                        }, null, 2),
+                    },
+                ],
             };
         } catch (error) {
             return {
                 content: [
                     {
                         type: 'text',
-                        text: `Error configuring authentication: ${error instanceof Error ? error.message : String(error)}`
-                    }
+                        text: `Error configuring authentication: ${error instanceof Error ? error.message : String(error)}`,
+                    },
                 ],
-                isError: true
+                isError: true,
             };
         }
     }
@@ -138,19 +139,19 @@ export class OAuthToolHandler {
                 content: [
                     {
                         type: 'text',
-                        text: JSON.stringify(result, null, 2)
-                    }
-                ]
+                        text: JSON.stringify(result, null, 2),
+                    },
+                ],
             };
         } catch (error) {
             return {
                 content: [
                     {
                         type: 'text',
-                        text: `Error testing authentication: ${error instanceof Error ? error.message : String(error)}`
-                    }
+                        text: `Error testing authentication: ${error instanceof Error ? error.message : String(error)}`,
+                    },
                 ],
-                isError: true
+                isError: true,
             };
         }
     }
@@ -168,20 +169,20 @@ export class OAuthToolHandler {
                         type: 'text',
                         text: JSON.stringify({
                             authType: this.config.auth?.type || 'none',
-                            tokenStatus: status
-                        }, null, 2)
-                    }
-                ]
+                            tokenStatus: status,
+                        }, null, 2),
+                    },
+                ],
             };
         } catch (error) {
             return {
                 content: [
                     {
                         type: 'text',
-                        text: `Error getting token status: ${error instanceof Error ? error.message : String(error)}`
-                    }
+                        text: `Error getting token status: ${error instanceof Error ? error.message : String(error)}`,
+                    },
                 ],
-                isError: true
+                isError: true,
             };
         }
     }
@@ -206,20 +207,20 @@ export class OAuthToolHandler {
                         text: JSON.stringify({
                             success: true,
                             message: 'Token refreshed successfully',
-                            tokenStatus: status
-                        }, null, 2)
-                    }
-                ]
+                            tokenStatus: status,
+                        }, null, 2),
+                    },
+                ],
             };
         } catch (error) {
             return {
                 content: [
                     {
                         type: 'text',
-                        text: `Error refreshing token: ${error instanceof Error ? error.message : String(error)}`
-                    }
+                        text: `Error refreshing token: ${error instanceof Error ? error.message : String(error)}`,
+                    },
                 ],
-                isError: true
+                isError: true,
             };
         }
     }
@@ -240,20 +241,20 @@ export class OAuthToolHandler {
                             success: true,
                             fhirUrl,
                             discoveredTokenUrl: tokenUrl,
-                            message: 'OAuth endpoints discovered successfully'
-                        }, null, 2)
-                    }
-                ]
+                            message: 'OAuth endpoints discovered successfully',
+                        }, null, 2),
+                    },
+                ],
             };
         } catch (error) {
             return {
                 content: [
                     {
                         type: 'text',
-                        text: `Error discovering OAuth endpoints: ${error instanceof Error ? error.message : String(error)}`
-                    }
+                        text: `Error discovering OAuth endpoints: ${error instanceof Error ? error.message : String(error)}`,
+                    },
                 ],
-                isError: true
+                isError: true,
             };
         }
     }
