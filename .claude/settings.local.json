@@ -18,7 +18,10 @@
       "Bash(npx jest:*)",
       "Bash(npm run lint:*)",
       "mcp__filesystem-user__list_directory",
-      "Bash(tasklist)"
+      "Bash(tasklist)",
+      "Bash(timeout:*)",
+      "mcp__filesystem-user__create_directory",
+      "mcp__filesystem-user__edit_file"
     ],
     "deny": [],
     "ask": []

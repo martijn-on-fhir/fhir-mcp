@@ -1,3 +1,15 @@
+# [1.14.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.13.2...v1.14.0) (2025-09-16)
+
+
+### Bug Fixes
+
+* resolve merge conflict in package.json scripts ([6a37fb5](https://github.com/martijn-on-fhir/fhir-mcp/commit/6a37fb58e09a8fb6820e159cbf649d309f326e95))
+
+
+### Features
+
+* refactor to CLI-only configuration with commander.js ([30f3fec](https://github.com/martijn-on-fhir/fhir-mcp/commit/30f3fec0c93a264367944500dc2b8b4138e248ae))
+
 ## [1.13.2](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.13.1...v1.13.2) (2025-09-16)
 
 

@@ -11,8 +11,8 @@ import {
     ListToolsRequestSchema,
     ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import {loadConfigWithFile as loadConfig} from './lib/configuration/config-loader.js';
-import {ServerConfig} from './lib/configuration/config.js';
+import {parseCliArgs, getCliOptions} from './lib/cli/cli-parser.js';
+import {ServerConfig} from './lib/interfaces/config.js';
 import {Narrative, NarrativeStyle} from './lib/narrative/narrative.js';
 import {FHIRPromptManager} from './lib/prompts/prompt-manager.js';
 import {FHIRDocumentationProvider} from './lib/documentation/fhir-documentation-provider.js';
@@ -154,7 +154,7 @@ class FHIRMCPServer implements AuthManagerProvider {
 
     constructor() {
 
-        this.config = loadConfig();
+        this.config = parseCliArgs();
         this.promptManager = new FHIRPromptManager();
         this.documentationProvider = new FHIRDocumentationProvider();
         this.templateManager = new ResourceTemplateManager();
@@ -528,6 +528,14 @@ class FHIRMCPServer implements AuthManagerProvider {
                         },
                     },
                     {
+                        name: 'get_cli_options',
+                        description: 'Display all available CLI options, flags, and usage examples for the FHIR MCP server',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {},
+                        },
+                    },
+                    {
                         name: 'send_feedback',
                         description: 'Send feedback or log messages to the console',
                         inputSchema: {
@@ -793,6 +801,9 @@ class FHIRMCPServer implements AuthManagerProvider {
 
                 case 'get_config':
                     return await this._getConfig();
+
+                case 'get_cli_options':
+                    return await this._getCliOptions();
 
                 case 'send_feedback':
                     return await this._sendFeedback(args as {
@@ -1944,6 +1955,66 @@ GET /${resourceType}?date=ge2021-01-01`;
                         null,
                         2
                     ),
+                },
+            ],
+        };
+    }
+
+    /**
+     * Returns all available CLI options and usage examples
+     * @returns Promise resolving to CLI options data wrapped in MCP content format
+     */
+    private async _getCliOptions(): Promise<any> {
+        const cliOptions = getCliOptions();
+
+        // Format the output in a nice readable format
+        let output = `# ${cliOptions.name} v${cliOptions.version}\n\n`;
+        output += `${cliOptions.description}\n\n`;
+
+        output += '## Usage\n\n';
+        output += '```bash\n';
+        output += `${cliOptions.name} [options]\n`;
+        output += '```\n\n';
+
+        output += '## Required Options\n\n';
+        const requiredOptions = cliOptions.options.filter(opt => opt.required);
+        requiredOptions.forEach(option => {
+            output += `- **\`${option.flags}\`** - ${option.description}\n`;
+        });
+
+        output += '\n## Optional Flags\n\n';
+        const optionalOptions = cliOptions.options.filter(opt => !opt.required);
+        optionalOptions.forEach(option => {
+            output += `- **\`${option.flags}\`** - ${option.description}`;
+
+            if (option.defaultValue) {
+                output += ` (default: ${option.defaultValue})`;
+            }
+
+            output += '\n';
+        });
+
+        output += '\n## Authentication Types\n\n';
+        output += '- **`none`** - No authentication (default)\n';
+        output += '- **`bearer`** - Bearer token authentication (use with `--auth-token`)\n';
+        output += '- **`client_credentials`** - OAuth 2.0 client credentials flow (use with OAuth flags)\n\n';
+
+        output += '## Examples\n\n';
+        cliOptions.examples.forEach(example => {
+            output += `\`\`\`bash\n${example}\n\`\`\`\n\n`;
+        });
+
+        output += '## Notes\n\n';
+        output += '- All configuration must be provided via command line flags\n';
+        output += '- The FHIR URL (`-f` or `--fhir-url`) is required\n';
+        output += '- Use `--help` for built-in commander help\n';
+        output += '- Use `--version` to see the current version\n';
+
+        return {
+            content: [
+                {
+                    type: 'text',
+                    text: output,
                 },
             ],
         };
