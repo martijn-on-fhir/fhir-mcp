@@ -1,6 +1,6 @@
 {
   "name": "fhir-mcp-server",
-  "version": "1.13.1",
+  "version": "1.13.2",
   "description": "Model Context Protocol server for FHIR R4 with validation, narrative generation, and comprehensive resource management",
   "type": "module",
   "main": "dist/index.js",
@@ -11,7 +11,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "start-dev": "node dist/index.js http://localhost:3000/fhir",
-   "inspect": "npx @modelcontextprotocol/inspector node dist/index.js http://localhost:3000/fhir",
+    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js http://localhost:3000/fhir",
     "inspect-debug": "npx @modelcontextprotocol/inspector node --inspect=9230 dist/index.js http://localhost:3000/fhir",
     "dev": "tsx src/index.ts",
     "lint": "eslint src/**/*.ts --fix",
