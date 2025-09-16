@@ -4,118 +4,111 @@ A comprehensive MCP (Model Context Protocol) server for FHIR R4 with AI-powered 
 
 ## Configuration
 
-The server can be configured in multiple ways:
+The server is configured entirely through **command line flags**. All configuration must be provided via named parameters - no environment variables or config files are used.
 
-### Environment Variables
-
-```bash
-export FHIR_URL="https://your-fhir-server.com/fhir"
-export FHIR_API_KEY="your-api-key"  # Optional
-export FHIR_TIMEOUT="30000"         # Optional, defaults to 30000ms
-```
-
-### Command Line Arguments
+### Required Configuration
 
 ```bash
-npm start https://your-fhir-server.com/fhir
+# Basic usage - FHIR URL is required
+node dist/index.js -f http://localhost:3000/fhir
+node dist/index.js --fhir-url https://your-fhir-server.com/fhir
 ```
 
-### Using .env file
+### Optional Configuration
 
-Create a `.env` file in the project root:
+```bash
+# Custom timeout
+node dist/index.js -f http://localhost:3000/fhir --timeout 60000
 
-```env
-FHIR_URL=https://your-fhir-server.com/fhir
-FHIR_API_KEY=your-api-key
-FHIR_TIMEOUT=30000
+# Legacy API key support
+node dist/index.js -f http://localhost:3000/fhir --api-key your-api-key
+```
+
+### Getting Help
+
+```bash
+# View all available options
+node dist/index.js --help
+
+# Check version
+node dist/index.js --version
 ```
 
 ## Authentication
 
-The FHIR MCP Server includes a **comprehensive OAuth authentication system** supporting multiple authentication modes for secure FHIR server connections.
+The FHIR MCP Server includes a **comprehensive authentication system** supporting multiple authentication modes for secure FHIR server connections. All authentication is configured via CLI flags.
 
 ### 🔐 **Authentication Modes**
 
 #### **1. None (Default)**
 No authentication required - suitable for development and open FHIR servers:
 ```bash
-FHIR_AUTH_TYPE=none
+node dist/index.js -f http://localhost:3000/fhir
+# --auth-type defaults to 'none'
 ```
 
 #### **2. Bearer Token Authentication**
 Static bearer token for API access:
 ```bash
-FHIR_AUTH_TYPE=bearer
-FHIR_AUTH_TOKEN=your-bearer-token
+node dist/index.js -f http://localhost:3000/fhir \
+  --auth-type bearer \
+  --auth-token your-bearer-token
 ```
 
 #### **3. OAuth 2.0 Client Credentials**
 Dynamic OAuth token management with automatic refresh:
 ```bash
-FHIR_AUTH_TYPE=client_credentials
-FHIR_OAUTH_TOKEN_URL=https://auth.server.com/oauth/token
-FHIR_OAUTH_CLIENT_ID=your-client-id
-FHIR_OAUTH_CLIENT_SECRET=your-client-secret
-FHIR_OAUTH_SCOPE=user/*.read
-FHIR_OAUTH_AUTO_DISCOVER=true
+node dist/index.js -f http://localhost:3000/fhir \
+  --auth-type client_credentials \
+  --oauth-client-id your-client-id \
+  --oauth-client-secret your-client-secret \
+  --oauth-token-url https://auth.server.com/oauth/token \
+  --oauth-scope "user/*.read" \
+  --oauth-auto-discover
 ```
 
-### 🛠️ **OAuth Configuration Options**
+### 🛠️ **Complete CLI Options**
 
-#### **Environment Variables**
+#### **All Available Flags**
 ```bash
-# Authentication type
-FHIR_AUTH_TYPE=client_credentials  # none | bearer | client_credentials
+# Required
+-f, --fhir-url <url>              FHIR server base URL
 
-# Bearer token authentication
-FHIR_AUTH_TOKEN=your-bearer-token
+# Optional Configuration
+-t, --timeout <ms>                Request timeout in milliseconds (default: 30000)
+--auth-type <type>                Authentication type: none, bearer, client_credentials (default: none)
 
-# OAuth 2.0 client credentials
-FHIR_OAUTH_TOKEN_URL=https://auth.server.com/oauth/token
-FHIR_OAUTH_CLIENT_ID=your-client-id
-FHIR_OAUTH_CLIENT_SECRET=your-client-secret
-FHIR_OAUTH_SCOPE=user/*.read
-FHIR_OAUTH_AUTO_DISCOVER=true
+# Bearer Token Authentication
+--auth-token <token>              Bearer token for authentication
 
-# Legacy API key support (deprecated - use FHIR_AUTH_TOKEN instead)
-FHIR_API_KEY=your-api-key
-```
+# OAuth 2.0 Client Credentials
+--oauth-token-url <url>           OAuth token endpoint URL
+--oauth-client-id <id>            OAuth client ID
+--oauth-client-secret <secret>    OAuth client secret
+--oauth-scope <scope>             OAuth scope
+--oauth-auto-discover             Auto-discover OAuth endpoints from FHIR server
 
-#### **Configuration File (mcp-config.json)**
-```json
-{
-  "url": "https://your-fhir-server.com/fhir",
-  "timeout": 30000,
-  "auth": {
-    "type": "client_credentials",
-    "oauth": {
-      "tokenUrl": "https://auth.server.com/oauth/token",
-      "clientId": "your-client-id",
-      "clientSecret": "your-client-secret",
-      "scope": "user/*.read",
-      "autoDiscover": false
-    }
-  }
-}
+# Legacy Support
+--api-key <key>                   Legacy API key (deprecated)
+
+# Utility
+-V, --version                     Output the version number
+-h, --help                        Display help for command
 ```
 
 #### **Claude Desktop Configuration Examples**
 
-**With OAuth 2.0 Client Credentials:**
+**Basic Configuration (No Auth):**
 ```json
 {
   "mcpServers": {
     "fhir": {
       "command": "node",
-      "args": ["/path/to/fhir-mcp/dist/index.js"],
-      "env": {
-        "FHIR_URL": "https://your-fhir-server.com/fhir",
-        "FHIR_AUTH_TYPE": "client_credentials",
-        "FHIR_OAUTH_TOKEN_URL": "https://auth.server.com/oauth/token",
-        "FHIR_OAUTH_CLIENT_ID": "your-client-id",
-        "FHIR_OAUTH_CLIENT_SECRET": "your-client-secret",
-        "FHIR_OAUTH_SCOPE": "user/*.read"
-      }
+      "args": [
+        "C:\\projects\\fhir-mcp\\dist\\index.js",
+        "-f",
+        "http://localhost:3000/fhir"
+      ]
     }
   }
 }
@@ -127,12 +120,41 @@ FHIR_API_KEY=your-api-key
   "mcpServers": {
     "fhir": {
       "command": "node",
-      "args": ["/path/to/fhir-mcp/dist/index.js"],
-      "env": {
-        "FHIR_URL": "https://your-fhir-server.com/fhir",
-        "FHIR_AUTH_TYPE": "bearer",
-        "FHIR_AUTH_TOKEN": "your-bearer-token"
-      }
+      "args": [
+        "C:\\projects\\fhir-mcp\\dist\\index.js",
+        "-f",
+        "https://your-fhir-server.com/fhir",
+        "--auth-type",
+        "bearer",
+        "--auth-token",
+        "your-bearer-token"
+      ]
+    }
+  }
+}
+```
+
+**With OAuth 2.0 Client Credentials:**
+```json
+{
+  "mcpServers": {
+    "fhir": {
+      "command": "node",
+      "args": [
+        "C:\\projects\\fhir-mcp\\dist\\index.js",
+        "-f",
+        "https://your-fhir-server.com/fhir",
+        "--auth-type",
+        "client_credentials",
+        "--oauth-client-id",
+        "your-client-id",
+        "--oauth-client-secret",
+        "your-client-secret",
+        "--oauth-token-url",
+        "https://auth.server.com/oauth/token",
+        "--oauth-scope",
+        "user/*.read"
+      ]
     }
   }
 }
@@ -224,7 +246,7 @@ Searches these endpoints automatically:
 ✅ **Dynamic Configuration**: Runtime authentication configuration changes
 ✅ **Comprehensive Testing**: Built-in tools for testing authentication
 ✅ **Secure Implementation**: Industry-standard OAuth 2.0 compliance
-✅ **Easy Integration**: Simple environment variable configuration
+✅ **Explicit Configuration**: All settings visible in command line arguments
 ✅ **Production Ready**: Robust error handling and token management
 
 ### 🔍 **Troubleshooting Authentication**
@@ -263,14 +285,16 @@ Searches these endpoints automatically:
 Test your authentication setup:
 ```bash
 # Test with bearer token
-FHIR_AUTH_TYPE=bearer FHIR_AUTH_TOKEN=your-token npm start
+node dist/index.js -f http://localhost:3000/fhir \
+  --auth-type bearer \
+  --auth-token your-token
 
 # Test with OAuth
-FHIR_AUTH_TYPE=client_credentials \
-FHIR_OAUTH_CLIENT_ID=your-id \
-FHIR_OAUTH_CLIENT_SECRET=your-secret \
-FHIR_OAUTH_TOKEN_URL=https://auth.server.com/oauth/token \
-npm start
+node dist/index.js -f http://localhost:3000/fhir \
+  --auth-type client_credentials \
+  --oauth-client-id your-id \
+  --oauth-client-secret your-secret \
+  --oauth-token-url https://auth.server.com/oauth/token
 ```
 
 The OAuth authentication system ensures secure, standards-compliant access to FHIR servers while providing flexibility for different deployment scenarios.
@@ -287,14 +311,16 @@ npm run build
 ### Development
 
 ```bash
-npm run dev https://your-fhir-server.com/fhir
+# Development mode with CLI flags
+npm run build
+node dist/index.js -f http://localhost:3000/fhir
 ```
 
 ### Production
 
 ```bash
 npm run build
-npm start https://your-fhir-server.com/fhir
+node dist/index.js -f https://your-fhir-server.com/fhir
 ```
 
 ## Available Tools
@@ -1087,11 +1113,13 @@ Add to your Claude Desktop configuration:
   "mcpServers": {
     "fhir": {
       "command": "node",
-      "args": ["/path/to/fhir-mcp/dist/index.js", "https://your-fhir-server.com/fhir"],
-      "env": {
-        "FHIR_API_KEY": "your-api-key",
-        "FHIR_URL": "http://localhost:3000/fhir"
-      }
+      "args": [
+        "C:\\projects\\fhir-mcp\\dist\\index.js",
+        "-f",
+        "http://localhost:3000/fhir",
+        "--api-key",
+        "your-api-key"
+      ]
     }
   }
 }

@@ -6,9 +6,8 @@
  * - bearer: Manual bearer token
  * - client_credentials: OAuth 2.0 client credentials flow
  */
-
 import axios from 'axios';
-import { AuthConfig } from '../configuration/config.js';
+import {AuthConfig} from '../interfaces/config.js';
 
 export interface TokenResponse {
     access_token: string;
@@ -22,10 +21,40 @@ export interface AuthHeaders {
 }
 
 export class AuthManager {
+
+    /**
+     * Represents the configuration settings for authentication.
+     *
+     * This configuration object is used to define and manage
+     * various parameters required for authentication in the system.
+     */
     private config: AuthConfig;
+
+    /**
+     * A cached token that may be used for authentication or session management.
+     * This optional string variable stores the token to avoid repeated retrieval
+     * or generation, enhancing performance and reducing redundancy.
+     *
+     * - If defined, it typically holds a previously acquired token value.
+     * - If undefined, it indicates that no cached token is currently available.
+     */
     private cachedToken?: string;
+
+    /**
+     * Represents the optional expiration date and time for a token.
+     * If provided, this indicates the specific point in time when the token
+     * should be considered invalid and no longer usable.
+     *
+     * The value is represented as a JavaScript Date object.
+     */
     private tokenExpiry?: Date;
 
+    /**
+     * Constructor for initializing an authentication configuration.
+     *
+     * @param {AuthConfig} config - The authentication configuration object that contains necessary settings.
+     * @return {AuthConfig} A reference to the newly created authentication configuration instance.
+     */
     constructor(config: AuthConfig) {
         this.config = config;
     }
@@ -35,7 +64,9 @@ export class AuthManager {
      * @returns Promise resolving to auth headers object
      */
     async getAuthHeaders(): Promise<AuthHeaders> {
+
         switch (this.config.type) {
+
         case 'none':
             return {};
 
@@ -55,6 +86,7 @@ export class AuthManager {
      * @returns Bearer token headers
      */
     private getBearerHeaders(): AuthHeaders {
+
         if (!this.config.token) {
             throw new Error('Bearer token is required for bearer authentication');
         }
@@ -69,15 +101,15 @@ export class AuthManager {
      * @returns Promise resolving to OAuth headers
      */
     private async getClientCredentialsHeaders(): Promise<AuthHeaders> {
-        // Check if we have a valid cached token
+
         if (this.cachedToken && this.tokenExpiry && new Date() < this.tokenExpiry) {
             return {
                 'Authorization': `Bearer ${this.cachedToken}`,
             };
         }
-
-        // Request new token
+        
         const token = await this.requestOAuthToken();
+
         return {
             'Authorization': `Bearer ${token}`,
         };
@@ -88,11 +120,12 @@ export class AuthManager {
      * @returns Promise resolving to access token
      */
     private async requestOAuthToken(): Promise<string> {
+
         if (!this.config.oauth) {
             throw new Error('OAuth configuration is required for client_credentials authentication');
         }
 
-        const { tokenUrl, clientId, clientSecret, scope } = this.config.oauth;
+        const {tokenUrl, clientId, clientSecret, scope} = this.config.oauth;
 
         if (!tokenUrl || !clientId || !clientSecret) {
             throw new Error('OAuth tokenUrl, clientId, and clientSecret are required for client_credentials flow');
@@ -105,7 +138,7 @@ export class AuthManager {
             client_id: clientId,
             // eslint-disable-next-line camelcase
             client_secret: clientSecret,
-            ...(scope && { scope }),
+            ...(scope && {scope}),
         };
 
         try {
@@ -121,7 +154,7 @@ export class AuthManager {
             );
 
             // eslint-disable-next-line camelcase,@typescript-eslint/naming-convention
-            const { access_token, expires_in } = response.data;
+            const {access_token, expires_in} = response.data;
 
             // eslint-disable-next-line camelcase
             this.cachedToken = access_token;
@@ -136,10 +169,11 @@ export class AuthManager {
             return access_token;
 
         } catch (error) {
+
             if (axios.isAxiosError(error)) {
                 const errorMsg = error.response?.data?.error_description ||
-                               error.response?.data?.error ||
-                               error.message;
+                    error.response?.data?.error ||
+                    error.message;
                 throw new Error(`OAuth token request failed: ${errorMsg}`);
             }
 
@@ -153,6 +187,7 @@ export class AuthManager {
      * @returns Promise resolving to discovered token URL
      */
     async discoverOAuthEndpoints(fhirUrl: string): Promise<string> {
+
         const wellKnownUrls = [
             `${fhirUrl}/.well-known/smart_configuration`,
             `${fhirUrl}/.well-known/smart-configuration`,
@@ -160,10 +195,11 @@ export class AuthManager {
         ];
 
         for (const wellKnownUrl of wellKnownUrls) {
+
             try {
                 const response = await axios.get(wellKnownUrl, {
                     timeout: 10000,
-                    headers: { 'Accept': 'application/json' },
+                    headers: {'Accept': 'application/json'},
                 });
 
                 const config = response.data;
@@ -172,7 +208,6 @@ export class AuthManager {
                     return config.token_endpoint;
                 }
             } catch {
-                // Continue to next URL
                 continue;
             }
         }
@@ -199,6 +234,7 @@ export class AuthManager {
                 },
             };
         } catch (error) {
+
             return {
                 success: false,
                 message: `Authentication test failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -222,6 +258,7 @@ export class AuthManager {
      * Get current token status
      */
     getTokenStatus(): { hasToken: boolean; isExpired: boolean; expiresAt?: string } {
+
         const hasToken = !!this.cachedToken;
         const isExpired = this.tokenExpiry ? new Date() >= this.tokenExpiry : false;
 

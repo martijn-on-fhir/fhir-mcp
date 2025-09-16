@@ -6,7 +6,7 @@
  */
 
 import { AuthManager } from './auth-manager.js';
-import { AuthConfig, ServerConfig } from '../configuration/config.js';
+import { AuthConfig, ServerConfig } from '../interfaces/config.js';
 
 export interface OAuthConfigureArgs {
     authType?: string;
