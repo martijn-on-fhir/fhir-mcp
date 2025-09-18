@@ -1,5 +1,7 @@
 {
   "name": "fhir-mcp-server",
+  "author": "Martijn Schimmel",
+  "license": "MIT",
   "version": "1.14.0",
   "description": "Model Context Protocol server for FHIR R4 with validation, narrative generation, and comprehensive resource management",
   "type": "module",
@@ -7,11 +9,17 @@
   "bin": {
     "fhir-mcp-server": "dist/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/martijn-on-fhir/fhir-mcp"
+  },
+  "homepage": "https://github.com/martijn-on-fhir/fhir-mcp",
+  "keywords": [  "mcp",  "server", "fhir", "typescript"],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "start-dev": "node dist/index.js -f http://localhost:3000/fhir",
-    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js -f http://localhost:3000/fhir",
+    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js -f http://localhost:3000/fhir -t 10000 --auth-type bearer --auth-token your-bearer-token",
     "inspect-debug": "npx @modelcontextprotocol/inspector node --inspect=9230 dist/index.js -f http://localhost:3000/fhir",
     "dev": "tsx src/index.ts",
     "lint": "eslint src/**/*.ts --fix",
@@ -28,14 +36,6 @@
     "commit": "cz",
     "prepare": "husky"
   },
-  "keywords": [
-    "mcp",
-    "server",
-    "fhir",
-    "typescript"
-  ],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "axios": "^1.11.0",

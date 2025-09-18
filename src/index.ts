@@ -2644,7 +2644,6 @@ async function main(): Promise<void> {
 
         // Error starting server - use stderr to avoid corrupting MCP stdio protocol
         process.stderr.write(`Error starting MCP server: ${error instanceof Error ? error.message : String(error)}\n`);
-
         process.exit(1);
     }
 }
