@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.14.0...v1.14.1) (2025-09-18)
+
+
+### Bug Fixes
+
+* cleaning up ([6de84fc](https://github.com/martijn-on-fhir/fhir-mcp/commit/6de84fc10448e2dd27a668c184d9976b8c53ccb2))
+
 # [1.14.0](https://github.com/martijn-on-fhir/fhir-mcp/compare/v1.13.2...v1.14.0) (2025-09-16)
 
 
